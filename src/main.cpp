@@ -121,6 +121,7 @@ uint16_t sound_init[] = {
 
 #define PowerON PB10 //aka RYAC
 #define F_RLY PB12
+#define XSMUTE PB11
 
 //SPIClass::SPIClass(uint8_t mosi, uint8_t miso, uint8_t sclk, uint8_t ssel)
 SPIClass SPIdisp(DISP_SPI_MOSI, DISP_SPI_MISO, DISP_SPI_SCK);
