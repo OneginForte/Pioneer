@@ -7,26 +7,27 @@
 //#include <stdint.h>
 //#include <delay.h>
 
-#define PIN_A PA8  //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
-#define PIN_B PA9  //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define VOL_A PB8  //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define VOL_B PB9  //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 #define BUTTON PA12 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
 uint16_t buttonCounter = 0;
-uint16_t position = 0;
+uint16_t volumeposition = 0;
 
-RotaryEncoder encoder(PIN_A, PIN_B, BUTTON);
+RotaryEncoder encoder_vol(VOL_A, VOL_B, BUTTON);
 
 void encoderISR()
 {
-    encoder.readAB();
+    encoder_vol.readAB();
 }
 
 void encoderButtonISR()
 {
-    encoder.readPushButton();
+    encoder_vol.readPushButton();
 }
 
 void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint32_t ulBitOrder, uint16_t ulVal);
+
 void DispSend(uint8_t *data, uint8_t size);
 
     __STATIC_INLINE void DWT_Init(void)
@@ -122,7 +123,7 @@ uint16_t sound_init[] = {
 #define PowerON PB10 //aka RYAC
 #define F_RLY PB12
 #define SP_B_RLY PB13
-#define XSMUTE PB11
+#define XSMUTE PB11  //XAMUTE active low in controller, active high in scheme
 #define POWERKEY PA12
 
 //SPIClass::SPIClass(uint8_t mosi, uint8_t miso, uint8_t sclk, uint8_t ssel)
@@ -133,12 +134,12 @@ void setup ()
 {
     // put your setup code here, to run once:
     
-    AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;
-    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE;
+    AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;          //remap SPI1 pins to PB3,4,5
+    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE; //disable only JTAG for free more pins
 
     pinMode(PC13, OUTPUT);
     pinMode(DISP_RESET, OUTPUT);
-    digitalWrite(DISP_RESET, LOW);
+    //digitalWrite(DISP_RESET, LOW);
 
     pinMode(DISP_SPI_CS, OUTPUT);
     digitalWrite(DISP_SPI_CS, LOW);
@@ -150,17 +151,13 @@ void setup ()
 
     DWT_Init();
 
-
     SPIdisp.begin(); //prepare and start SPI
     SPIdisp.beginTransaction(spiDispSettings);
-
 
     //SPIsnd.setBitOrder(LSBFIRST);
     //SPIsnd.setDataMode(SPI_MODE0);
 
-
-
-    encoder.begin(); //set encoders pins as input & enable built-in pullup resistors
+    encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
 
     digitalWrite(DISP_RESET, HIGH);
     delay (100);
@@ -176,31 +173,24 @@ void setup ()
     delay(12);
     digitalWrite(DISP_SPI_CS, LOW);
 
-    attachInterrupt(digitalPinToInterrupt(PIN_A), encoderISR, CHANGE);         //call encoderISR()    every high->low or low->high changes
+    attachInterrupt(digitalPinToInterrupt(VOL_A), encoderISR, CHANGE);         //call encoderISR()    every high->low or low->high changes
     attachInterrupt(digitalPinToInterrupt(BUTTON), encoderButtonISR, FALLING); //call pushButtonISR() every high->low              changes
 
-    for (size_t i = 0; i < 8; i++)
-
+    for (size_t i = 0; i < 8; i++) //init DSP
     {
-   
-        
         //SPIsnd.transfer16(sound_init[i], SPI_LAST);
         shift16(SPIDSP_MOSI, SPIDSP_SCK, MSBFIRST, sound_init[i]);
         delay_us(10);
-        
-        
-    }
     }
 
-    void loop(){
-        //digitalWrite(PC13, HIGH);
-        //digitalWrite(SPIDEVICE_MISO, LOW);
-        delay(1000);
-        position = encoder.getPosition();
-        buttonCounter = encoder.getPushButton();
+}
+
+    void loop()
+    {
         // put your main code here, to run repeatedly:
-        //digitalWrite(PC13, LOW);
         delay(1000);
+        volumeposition = encoder_vol.getPosition();
+        buttonCounter = encoder_vol.getPushButton();
     }
 
     void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint32_t ulBitOrder, uint16_t ulVal)
