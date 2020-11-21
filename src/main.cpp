@@ -43,6 +43,7 @@ __STATIC_INLINE void delay_us(uint32_t us)
     while (DWT->CYCCNT < us_count_tic);
 }
 
+
 uint8_t disp_init1[] = 
     {
     0x05,
