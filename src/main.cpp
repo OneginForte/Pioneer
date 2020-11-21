@@ -121,7 +121,9 @@ uint16_t sound_init[] = {
 
 #define PowerON PB10 //aka RYAC
 #define F_RLY PB12
+#define SP_B_RLY PB13
 #define XSMUTE PB11
+#define POWERKEY PA12
 
 //SPIClass::SPIClass(uint8_t mosi, uint8_t miso, uint8_t sclk, uint8_t ssel)
 SPIClass SPIdisp(DISP_SPI_MOSI, DISP_SPI_MISO, DISP_SPI_SCK);
@@ -181,11 +183,11 @@ void setup ()
 
     {
    
-        digitalWrite(PC13, LOW);
+        
         //SPIsnd.transfer16(sound_init[i], SPI_LAST);
         shift16(SPIDSP_MOSI, SPIDSP_SCK, MSBFIRST, sound_init[i]);
         delay_us(10);
-        digitalWrite(PC13, HIGH);
+        
         
     }
     }
