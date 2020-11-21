@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "main.h"
 //#include <stm32yyxx_ll_gpio.h>
 #include <RotaryEncoder.h>
 //#include <include/gpio.h>
@@ -43,19 +44,7 @@ __STATIC_INLINE void delay_us(uint32_t us)
     while (DWT->CYCCNT < us_count_tic);
 }
 
-struct vlStruct 
-    { 
-        char message [5];
-        uint16_t volume;
-    };
 
-const vlStruct (volume[])
-    {
-    {"    ",0x00A000},
-    {"    ",0x00A000},
-    {"    ",0x00A000}
-
-    };
 
 uint8_t disp_init1[] = 
     {
