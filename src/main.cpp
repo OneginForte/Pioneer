@@ -13,7 +13,7 @@
 #define BUTTON PA12 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
 uint16_t buttonCounter = 0;
-uint16_t volumeposition = 0;
+uint16_t volumeposition = 48;
 
 RotaryEncoder encoder_vol(VOL_A, VOL_B, BUTTON);
 
