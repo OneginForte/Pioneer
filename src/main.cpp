@@ -114,7 +114,7 @@ uint16_t sound_init[] = {
     0x0009, //tone treeble
     0x0000, //test, as is from datasheet.
     // However datasheet specified sent init chain to addresses from 0 to 5
-    // 0,1,2,3...3,4,5  adress 3 init every of 8 channel. 
+    // 0,1,2,3...3,4,5  adress 3 must init every of 8 channel. 
     //Not used channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011
     //1xx3 volume range 0dB to +24dB,  0xx3 volume range 0 to -95dB
     //FR - 0xx3, FL - 2xx3, SW - 4xx3, C- 6xx3, SR - 8xx3, SL - Axx3, SBR - Cxx3, SBL - Exx3 
