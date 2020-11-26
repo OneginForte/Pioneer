@@ -227,7 +227,7 @@ void setup ()
         {
             digitalWrite(F_RLY, LOW);
             digitalWrite(XSMUTE, LOW);
-
+            digitalWrite(PowerON, LOW);
         }
     }
 
