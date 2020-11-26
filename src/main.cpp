@@ -10,23 +10,23 @@
 
 #define VOL_A PB8  //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
 #define VOL_B PB9  //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
-#define BUTTON PA12 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define BUTTON PA10 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
 uint16_t buttonCounter = 0;
 uint16_t volumeposition = 48;
 
-RotaryEncoder encoder_vol(VOL_A, VOL_B, BUTTON);
+RotaryEncoder encoder_vol(VOL_A, VOL_B);
 
 void encoderISR()
 {
     encoder_vol.readAB();
 }
-
-void encoderButtonISR()
+/*
+void ButtonISR()
 {
     encoder_vol.readPushButton();
 }
-
+*/
 void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint32_t ulBitOrder, uint16_t ulVal);
 
 void DispSend(uint8_t *data, uint8_t size);
@@ -146,19 +146,29 @@ SPISettings spiDispSettings(10000, LSBFIRST, SPI_MODE3);
 void setup ()
 {
     // put your setup code here, to run once:
-    
+    RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
     AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;          //remap SPI1 pins to PB3,4,5
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE; //disable only JTAG for free more pins
 
     pinMode(POWERLED, OUTPUT);
     digitalWrite(POWERLED, HIGH);
     pinMode(PowerON, OUTPUT);
-    digitalWrite(PowerON, HIGH);
+    digitalWrite(PowerON, LOW);
     pinMode(F_RLY, OUTPUT);
     digitalWrite(F_RLY, LOW);
     pinMode(XSMUTE, OUTPUT);
     digitalWrite(XSMUTE, LOW);
-       
+    
+    pinMode(POWERKEY, INPUT_PULLDOWN);
+
+    while (digitalReadFast((PinName)BUTTON) != HIGH)
+    {
+
+
+    }
+
+    digitalWrite(PowerON, HIGH);
+    digitalWrite(POWERLED, LOW);
 
     pinMode(DISP_RESET, OUTPUT);
     digitalWrite(DISP_RESET, LOW);
@@ -176,15 +186,12 @@ void setup ()
     SPIdisp.begin(); //prepare and start SPI
     SPIdisp.beginTransaction(spiDispSettings);
 
-    //SPIsnd.setBitOrder(LSBFIRST);
-    //SPIsnd.setDataMode(SPI_MODE0);
-
     encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
 
     digitalWrite(DISP_RESET, HIGH);
     delay (100);
     digitalWrite(DISP_SPI_CS, HIGH);
-
+    //delay(100);
     DispSend(disp_init1, 6);
     delay(12);
     DispSend(disp_init2, 19);
@@ -196,8 +203,9 @@ void setup ()
     digitalWrite(DISP_SPI_CS, LOW);
 
     attachInterrupt(digitalPinToInterrupt(VOL_A), encoderISR, CHANGE);         //call encoderISR()    every high->low or low->high changes
-    attachInterrupt(digitalPinToInterrupt(BUTTON), encoderButtonISR, FALLING); //call pushButtonISR() every high->low              changes
-
+    //attachInterrupt(digitalPinToInterrupt(BUTTON), encoderButtonISR, FALLING); //call pushButtonISR() every high->low              changes
+    
+    /*
     for (size_t i = 0; i < 8; i++) //init DSP
     {
         //SPIsnd.transfer16(sound_init[i], SPI_LAST);
@@ -206,7 +214,7 @@ void setup ()
     }
     digitalWrite(F_RLY, HIGH);
     digitalWrite(XSMUTE, HIGH);
-
+    */
 }
 
     void loop()
@@ -215,7 +223,7 @@ void setup ()
         delay(1000);
         volumeposition = encoder_vol.getPosition();
 
-        if (encoder_vol.getPushButton())
+        if (digitalReadFast((PinName)BUTTON) == HIGH)
         {
             digitalWrite(F_RLY, LOW);
             digitalWrite(XSMUTE, LOW);
