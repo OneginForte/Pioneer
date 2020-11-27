@@ -4,7 +4,7 @@
 #include <RotaryEncoder.h>
 //#include <include/gpio.h>
 //#include <Wire.h>
-#include <SPI.h>
+//#include <SPI.h>
 //#include <stdint.h>
 //#include <delay.h>
 
@@ -28,11 +28,11 @@ void ButtonISR()
     encoder_vol.readPushButton();
 }
 */
-void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint32_t ulBitOrder, uint16_t ulVal);
+void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint16_t ulVal);
 
-void DispSend(uint8_t *data, uint8_t size);
+void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint8_t *data, uint8_t size);
 
-    __STATIC_INLINE void DWT_Init(void)
+__STATIC_INLINE void DWT_Init(void)
 {
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // разрешаем использовать счётчик
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;            // запускаем счётчик
@@ -129,7 +129,7 @@ uint16_t sound_init[] = {
 
 #define DISP_SPI_CS PA15
 #define DISP_SPI_MOSI PB5
-#define DISP_SPI_MISO PB4
+//#define DISP_SPI_MISO PB4
 #define DISP_SPI_SCK PB3
 #define DISP_RESET PB6
 
@@ -141,14 +141,14 @@ uint16_t sound_init[] = {
 #define POWERLED PC13
 
 //SPIClass::SPIClass(uint8_t mosi, uint8_t miso, uint8_t sclk, uint8_t ssel)
-SPIClass SPIdisp(DISP_SPI_MOSI, DISP_SPI_MISO, DISP_SPI_SCK);
-SPISettings spiDispSettings(10000, LSBFIRST, SPI_MODE3);
+//SPIClass SPIdisp(DISP_SPI_MOSI, DISP_SPI_MISO, DISP_SPI_SCK);
+//SPISettings spiDispSettings(10000, LSBFIRST, SPI_MODE3);
 
 void setup ()
 {
     // put your setup code here, to run once:
-    RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
-    AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;          //remap SPI1 pins to PB3,4,5
+    //RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
+    //AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;          //remap SPI1 pins to PB3,4,5
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE; //disable only JTAG for free more pins
 
     pinMode(POWERLED, OUTPUT);
@@ -174,21 +174,26 @@ void setup ()
     digitalWrite(PowerON, HIGH);
     digitalWrite(POWERLED, LOW);
 
-    pinMode(DISP_RESET, OUTPUT);
-    digitalWrite(DISP_RESET, LOW);
-
     pinMode(DISP_SPI_CS, OUTPUT);
     digitalWrite(DISP_SPI_CS, LOW);
+    pinMode(DISP_RESET, OUTPUT);
+    digitalWrite(DISP_RESET, LOW);
+    pinMode(DISP_SPI_MOSI, OUTPUT);
+    digitalWrite(DISP_MOSI_SCK, HIGH);
 
-    //pinMode(SPIDSP_SCK, OUTPUT);
-    //pinMode(SPIDSP_MOSI, OUTPUT);
-    //digitalWrite(SPIDSP_SCK, LOW);
-    //digitalWrite(SPIDSP_MOSI, LOW);
+    pinMode(DISP_SPI_SCK, OUTPUT);
+    digitalWrite(DISP_SPI_SCK, HIGH);
+
+    pinMode(SPIDSP_SCK, OUTPUT);
+    digitalWrite(SPIDSP_SCK, LOW);
+    pinMode(SPIDSP_MOSI, OUTPUT);
+    digitalWrite(SPIDSP_MOSI, LOW);
 
     DWT_Init();
 
-    SPIdisp.begin(); //prepare and start SPI
-    SPIdisp.beginTransaction(spiDispSettings);
+    delay(100);
+    //SPIdisp.begin(); //prepare and start SPI
+    //SPIdisp.beginTransaction(spiDispSettings);
 
     encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
 
@@ -196,13 +201,13 @@ void setup ()
     delay (100);
     digitalWrite(DISP_SPI_CS, HIGH);
     delay(1);
-    DispSend(disp_init1, 6);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init1, 6);
     delay(12);
-    DispSend(disp_init2, 19);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init2, 19);
     delay(12);
-    DispSend(disp_init3, 9);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init3, 9);
     delay(12);
-    DispSend(disp_init4, 15);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init4, 15);
     delay(12);
     digitalWrite(DISP_SPI_CS, LOW);
 
@@ -213,7 +218,7 @@ void setup ()
     for (size_t i = 0; i < 8; i++) //init DSP
     {
         //SPIsnd.transfer16(sound_init[i], SPI_LAST);
-        shift16(SPIDSP_MOSI, SPIDSP_SCK, MSBFIRST, sound_init[i]);
+        shift16(SPIDSP_MOSI, SPIDSP_SCK, sound_init[i]);
         delay_us(10);
     }
     digitalWrite(F_RLY, HIGH);
@@ -235,7 +240,7 @@ void setup ()
         }
     }
 
-    void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint32_t ulBitOrder, uint16_t ulVal)
+    void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint16_t ulVal)
     {
         uint8_t i;
         for (i = 0; i < 16; i++)
@@ -258,11 +263,31 @@ void setup ()
         digitalWrite(ulDataPin, LOW);
     }
 
-    void DispSend(uint8_t *data, uint8_t size)
+    void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint8_t *data, uint8_t size)
     {
         for (size_t i = 0; i < size; i++)
             {
-            SPIdisp.transfer(data[i]);
+            uint8_t k;
+            //digitalWrite(DispClockPin, LOW);
+            //digitalWrite(DispDataPin, LOW);
+            //delay_us(1);
+            for (k = 0; k < 8; k++)
+            {
+                digitalWrite(DispClockPin, LOW);
+                delay_us(1);
+                //digitalWrite(DispDataPin, LOW);
+                digitalWrite(DispDataPin, (data[i] & (1 << k)));
+                delay_us(1);
+                digitalWrite(DispClockPin, HIGH);
+                delay_us(1);
+                //digitalWrite(DispClockPin, LOW);
+                //delay_us(1);
+                //digitalWrite(DispDataPin, LOW);
+                //digitalWrite(DispClockPin, HIGH);
+            }
+            
+            digitalWrite(DispClockPin, HIGH);
+            digitalWrite(DispDataPin, LOW);
             delay_us(100);
         }
     }
