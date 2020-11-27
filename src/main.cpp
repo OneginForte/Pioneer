@@ -14,6 +14,7 @@
 
 uint16_t buttonCounter = 0;
 uint16_t volumeposition = 48;
+volatile uint8_t powerstatus = false;
 
 RotaryEncoder encoder_vol(VOL_A, VOL_B);
 
@@ -61,7 +62,7 @@ uint8_t disp_init2[] =
     0x13, 
     0x11, 
     0x11, 
-    'A','N','T','O','N',' ','M','E','L','N','I','K','O','V',  //14 letters
+    ' ',' ',' ','P','O','W','E','R',' ','O','N',' ',' ',' ',  //14 letters 
     0x00, 
     0x3F, 
     0x00
@@ -161,11 +162,14 @@ void setup ()
     
     pinMode(POWERKEY, INPUT_PULLDOWN);
 
+    /*
     while (digitalReadFast((PinName)BUTTON) != HIGH)
     {
 
 
     }
+    */
+    powerstatus = true;
 
     digitalWrite(PowerON, HIGH);
     digitalWrite(POWERLED, LOW);
@@ -176,10 +180,10 @@ void setup ()
     pinMode(DISP_SPI_CS, OUTPUT);
     digitalWrite(DISP_SPI_CS, LOW);
 
-    pinMode(SPIDSP_SCK, OUTPUT);
-    pinMode(SPIDSP_MOSI, OUTPUT);
-    digitalWrite(SPIDSP_SCK, LOW);
-    digitalWrite(SPIDSP_MOSI, LOW);
+    //pinMode(SPIDSP_SCK, OUTPUT);
+    //pinMode(SPIDSP_MOSI, OUTPUT);
+    //digitalWrite(SPIDSP_SCK, LOW);
+    //digitalWrite(SPIDSP_MOSI, LOW);
 
     DWT_Init();
 
@@ -191,7 +195,7 @@ void setup ()
     digitalWrite(DISP_RESET, HIGH);
     delay (100);
     digitalWrite(DISP_SPI_CS, HIGH);
-    //delay(100);
+    delay(1);
     DispSend(disp_init1, 6);
     delay(12);
     DispSend(disp_init2, 19);
