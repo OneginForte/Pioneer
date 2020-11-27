@@ -179,7 +179,7 @@ void setup ()
     pinMode(DISP_RESET, OUTPUT);
     digitalWrite(DISP_RESET, LOW);
     pinMode(DISP_SPI_MOSI, OUTPUT);
-    digitalWrite(DISP_MOSI_SCK, HIGH);
+    digitalWrite(DISP_SPI_MOSI, HIGH);
 
     pinMode(DISP_SPI_SCK, OUTPUT);
     digitalWrite(DISP_SPI_SCK, HIGH);
