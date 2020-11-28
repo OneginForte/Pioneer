@@ -177,8 +177,7 @@ void setup ()
     pinMode(DISP_SPI_CS, OUTPUT);
     digitalWrite(DISP_SPI_CS, LOW);
     pinMode(DISP_RESET, OUTPUT);
-    digitalWrite(DISP_RESET, LOW);
-    pinMode(DISP_SPI_MOSI, OUTPUT);
+     pinMode(DISP_SPI_MOSI, OUTPUT);
     digitalWrite(DISP_SPI_MOSI, HIGH);
 
     pinMode(DISP_SPI_SCK, OUTPUT);
@@ -274,12 +273,12 @@ void setup ()
             for (k = 0; k < 8; k++)
             {
                 digitalWrite(DispClockPin, LOW);
-                delay_us(1);
+                delay_us(2);
                 //digitalWrite(DispDataPin, LOW);
                 digitalWrite(DispDataPin, (data[i] & (1 << k)));
-                delay_us(1);
+                delay_us(2);
                 digitalWrite(DispClockPin, HIGH);
-                delay_us(1);
+                delay_us(2);
                 //digitalWrite(DispClockPin, LOW);
                 //delay_us(1);
                 //digitalWrite(DispDataPin, LOW);
