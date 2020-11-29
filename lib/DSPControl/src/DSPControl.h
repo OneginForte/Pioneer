@@ -86,25 +86,56 @@
 class DSPControl
 {
   public:
-    DSP(uint8_t encoderA, uint8_t encoderB);
+    DSP(uint8_t volume, uint8_t channel);
 
-           void     begin(void);
-           void     setvolume(void);
-       
+           void     begin(uint8_t channel);
+           void     setvolume(uint8_t volume, uint8_t channel);
+           void     setmute(uint8_t channel);
 
 
-    //inline void     setPosition(int16_t position);
+
+
+__STATIC_INLINE void delay_us(uint32_t us)
+{
+    uint32_t us_count_tic = us * (SystemCoreClock / 1000000U);
+    DWT->CYCCNT = 0U;
+    while (DWT->CYCCNT < us_count_tic);
+}
 
   private:
-    //       uint8_t _encoderA;           //pin "A"
-    //        uint8_t _encoderB;           //pin "B"
-             
-
-    //volatile uint8_t _prevValueAB = 0;    //previouse state of "A"+"B"
-    //volatile uint8_t _currValueAB = 0;    //current   state of "A"+"B"
+    void shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val);
     
+    uint16_t sound_init[] = 
+    {
+    0x2800, //input select IN10 to MAIN.
+    0x0001, //input select SUB1 & SUB2
+    0x4002, //mode L+R to MAIN
+    0x10a3, //volume FR 0x0303 +24dB, 0x0003 0dB, 0x0BF3 -95dB
+    0x30a3, //volume FL 0x2303 +24dB, 0x2003 0dB, 0x2BF3 -95dB
+    0x4BF3, //SW channel -95dB
+    0x6BF3, //C channel -95dB
+    0x8BF3, //SR channel -95dB
+    0xABF3, //SL channel -95dB
+    0xCBF3, //SBR channel -95dB
+    0xEBF3, //SBL channel -95dB
+    0x0008, //tone bass
+    0x0009, //tone treeble
+    0x0000, //test, as is from datasheet.
+    // However datasheet specified sent init chain to addresses from 0 to 5
+    // 0,1,2,3...3,4,5  adress 3 must init every of 8 channel. 
+    //Not used channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011
+    //1xx3 volume range 0dB to +24dB,  0xx3 volume range 0 to -95dB
+    //FR - 0xx3, FL - 2xx3, SW - 4xx3, C- 6xx3, SR - 8xx3, SL - Axx3, SBR - Cxx3, SBL - Exx3 
+    0x000B //volume change scheme
+    };
+    __STATIC_INLINE void DWT_Init(void)
+    {
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // разрешаем использовать счётчик
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;            // запускаем счётчик
+    }
+
   protected:
-    //volatile int16_t _counter     = 0;    //encoder click counter, limits -32768..32767
+    
 
 };
 

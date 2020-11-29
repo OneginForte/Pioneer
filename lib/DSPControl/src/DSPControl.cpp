@@ -73,10 +73,10 @@
     Constructor
 */
 /**************************************************************************/
-RotaryEncoder::RotaryEncoder(uint8_t encoderA, uint8_t encoderB)
+DSPControl::DSP(uint8_t encoderA, uint8_t encoderB)
 {
-  _encoderA      = encoderA;
-  _encoderB      = encoderB;
+             void     begin(void);
+             void     setvolume(void);
 }
 
 /**************************************************************************/
@@ -93,7 +93,7 @@ RotaryEncoder::RotaryEncoder(uint8_t encoderA, uint8_t encoderB)
     - for AVR     value of internal pull-up resistors is 30kOhm..60kOhm
 */
 /**************************************************************************/
-void RotaryEncoder::begin()
+void DSPControl::begin()
 {
   pinMode(_encoderA,      INPUT_PULLUP); //enable internal pull-up resistors 
   pinMode(_encoderB,      INPUT_PULLUP);
@@ -102,141 +102,63 @@ void RotaryEncoder::begin()
 
 /**************************************************************************/
 /*
-    readAB()
+    setvolume()
 
-    Reads "A" & "B" pins value
-
-    NOTE:
-    - always call this function before getPosition()
-    - 100nF/0.1μF capacitors between A & B channel pin & ground is a must!!!
-    - for fast MCU like Cortex use Interrupt Service Routine with "CHANGE"
-      parameter, ISR called when pin "A" changes from "1" to "0"
-      or from "0" to "1"
-    - for slow MCU like 8-bit AVR use Timer1 interrupt & TimerOne library
-    - the ISR function must take no parameters & return nothing
-    - delay() doesn't work during ISR & millis() doesn't increment
-    - declare all global variables inside ISR as "volatile", it prevent
-      compiler to make any optimization & unnecessary changes in the code
-      with the variable
-*/
-/**************************************************************************/
-void RotaryEncoder::readAB()
-{
-  noInterrupts();                                       //disable interrupts
-
-  _currValueAB  = digitalRead(_encoderA) << 1;
-  _currValueAB |= digitalRead(_encoderB);
-
-  switch ((_prevValueAB | _currValueAB))
-  {
-    #if defined(__AVR__)                                //slow MCU
-    case 0b0001:                                        //CW states, 1 count  per click
-  //case 0b0001: case 0b1110:                           //CW states, 2 counts per click
-    #else                                               //fast MCU
-    case 0b0001: case 0b1110:                           //CW states, 1 count  per click
-  //case 0b0001: case 0b1110: case 0b1000: case 0b0111: //CW states, 2 counts per click
-    #endif
-      _counter++;
-      break;
-
-    #if defined(__AVR__)                                //slow MCU
-    case 0b0100:                                        //CCW states, 1 count  per click
-  //case 0b0100: case 0b1011:                           //CCW states, 2 count  per click
-    #else                                               //fast MCU
-    case 0b0100: case 0b1011:                           //CCW states, 1 count  per click
-  //case 0b0100: case 0b1011: case 0b0010: case 0b1101: //CCW states, 2 counts per click
-    #endif
-      _counter--;
-      break;
-  }
-
-  _prevValueAB = _currValueAB << 2;                     //update previouse state
-
-  interrupts();                                         //enable interrupts
-}
-
-/**************************************************************************/
-/*
-    readPushButton()
-
-    Reads push button value
+    Set volume of channel
 
     NOTE:
-    - always call this function before getPushButton()
-    - add 100nF/0.1μF capacitors between button pin & ground to
-      reduce bounce!!!
-    - designed to use with Interrupt Service Routine with "FALLING"
-      parameter, ISR called when push button pin changes from "1" to "0"
-    - the ISR function must take no parameters & return nothing
-    - delay() doesn't work during ISR & millis() doesn't increment
-    - declare all global variables inside ISR as "volatile", it prevent
-      compiler to make any optimization & unnecessary changes in the code
-      with the variable
-*/
-/**************************************************************************
-void RotaryEncoder::readPushButton()
-{
-  noInterrupts();                             //disable interrupts
 
-  _buttonState = digitalRead(_encoderButton); //HIGH not pressed & LOW pressed, because internal pull-up resistor is enabled
-
-  interrupts();                               //enable interrupts
-}
-
-**************************************************************************/
-/*
-    getPosition()
-
-    Return encoder position
 */
 /**************************************************************************/
-int16_t RotaryEncoder::getPosition()
+void  setvolume(uint8_t volume, uint8_t channel);
 {
-  return _counter;
+
 }
 
 /**************************************************************************/
 /*
-    getPushButton()
+    setmute()
 
-    Return encoder button state
+    Mute selected channel
 
     NOTE:
-    - convert "HIGH" to "false" when button is not presses
-    - convert "LOW"  to "true"  when button is pressed
-*/
-/**************************************************************************
-bool RotaryEncoder::getPushButton()
-{
-  if (_buttonState == HIGH) return false;               //button is not pressed
-                            return _buttonState = true; //button is     pressed
-}
 
-**************************************************************************/
-/*
-    setPosition()
-
-    Manualy sets encoder position
 */
 /**************************************************************************/
-void RotaryEncoder::setPosition(int16_t position)
+void  setmute(uint8_t channel);
 {
-  _counter = position;
+
+
+
 }
 
-/**************************************************************************/
+
+/*************************************************************************/
 /*
-    setPushButton()
+    shift16()
 
-    Manualy sets encoder push button state
-
-    NOTE:
-    - "true" buttorn  is pressed
-    - "false" buttorn is not pressed
+    Software SPI process
 */
-/**************************************************************************
-void RotaryEncoder::setPushButton(bool state)
-{
-  _buttonState = ~state;
-}
-*/
+/**************************************************************************/
+    void shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val)
+    {
+        uint8_t i;
+        for (i = 0; i < 16; i++)
+        {
+            delay_us(1);
+            digitalWrite(DataPin, LOW);
+            delay_us(1);
+            digitalWrite(ClockPin, LOW);
+            delay_us(1);
+            digitalWrite(DataPin, (Val & (1 << (15 - i))));
+            delay_us(1);
+            digitalWrite(ClockPin, HIGH);
+            
+        }
+        delay_us(1);
+        digitalWrite(DataPin, HIGH);
+        delay_us(1);
+        digitalWrite(ClockPin, LOW);
+        delay_us(1);
+        digitalWrite(DataPin, LOW);
+    }

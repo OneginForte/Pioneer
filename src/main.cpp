@@ -22,28 +22,10 @@ void encoderISR()
 {
     encoder_vol.readAB();
 }
-/*
-void ButtonISR()
-{
-    encoder_vol.readPushButton();
-}
-*/
-void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint16_t ulVal);
+
+
 
 void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint8_t *data, uint8_t size);
-
-__STATIC_INLINE void DWT_Init(void)
-{
-    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // разрешаем использовать счётчик
-    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;            // запускаем счётчик
-}
-
-__STATIC_INLINE void delay_us(uint32_t us)
-{
-    uint32_t us_count_tic = us * (SystemCoreClock / 1000000U);
-    DWT->CYCCNT = 0U;
-    while (DWT->CYCCNT < us_count_tic);
-}
 
 
 
@@ -99,28 +81,7 @@ uint8_t disp_init4[] =
     0x00
     };
 
-uint16_t sound_init[] = {
-    0x2800, //input select IN10 to MAIN.
-    0x0001, //input select SUB1 & SUB2
-    0x4002, //mode L+R to MAIN
-    0x10a3, //volume FR 0x0303 +24dB, 0x0003 0dB, 0x0BF3 -95dB
-    0x30a3, //volume FL 0x2303 +24dB, 0x2003 0dB, 0x2BF3 -95dB
-    0x4BF3, //SW channel -95dB
-    0x6BF3, //C channel -95dB
-    0x8BF3, //SR channel -95dB
-    0xABF3, //SL channel -95dB
-    0xCBF3, //SBR channel -95dB
-    0xEBF3, //SBL channel -95dB
-    0x0008, //tone bass
-    0x0009, //tone treeble
-    0x0000, //test, as is from datasheet.
-    // However datasheet specified sent init chain to addresses from 0 to 5
-    // 0,1,2,3...3,4,5  adress 3 must init every of 8 channel. 
-    //Not used channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011
-    //1xx3 volume range 0dB to +24dB,  0xx3 volume range 0 to -95dB
-    //FR - 0xx3, FL - 2xx3, SW - 4xx3, C- 6xx3, SR - 8xx3, SL - Axx3, SBR - Cxx3, SBL - Exx3 
-    0x000B //volume change scheme
-};
+
 
 //#define SPIDSP_CS PA15
 #define SPIDSP_SCK PB14
@@ -183,12 +144,7 @@ void setup ()
     pinMode(DISP_SPI_SCK, OUTPUT);
     digitalWrite(DISP_SPI_SCK, HIGH);
 
-    pinMode(SPIDSP_SCK, OUTPUT);
-    digitalWrite(SPIDSP_SCK, LOW);
-    pinMode(SPIDSP_MOSI, OUTPUT);
-    digitalWrite(SPIDSP_MOSI, LOW);
 
-    DWT_Init();
 
     delay(100);
     //SPIdisp.begin(); //prepare and start SPI
@@ -239,28 +195,7 @@ void setup ()
         }
     }
 
-    void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint16_t ulVal)
-    {
-        uint8_t i;
-        for (i = 0; i < 16; i++)
-        {
-            delay_us(1);
-            digitalWrite(ulDataPin, LOW);
-            delay_us(1);
-            digitalWrite(ulClockPin, LOW);
-            delay_us(1);
-            digitalWrite(ulDataPin, (ulVal & (1 << (15 - i))));
-            delay_us(1);
-            digitalWrite(ulClockPin, HIGH);
-            
-        }
-        delay_us(1);
-        digitalWrite(ulDataPin, HIGH);
-        delay_us(1);
-        digitalWrite(ulClockPin, LOW);
-        delay_us(1);
-        digitalWrite(ulDataPin, LOW);
-    }
+
 
     void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint8_t *data, uint8_t size)
     {
