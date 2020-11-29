@@ -2,6 +2,7 @@
 #include "main.h"
 //#include <stm32yyxx_ll_gpio.h>
 #include <RotaryEncoder.h>
+#include "DSPControl.h"
 //#include <include/gpio.h>
 //#include <Wire.h>
 //#include <SPI.h>
@@ -13,10 +14,17 @@
 #define BUTTON PA10 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
 uint16_t buttonCounter = 0;
-uint16_t volumeposition = 48;
+
+//DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, uint8_t channel);
 volatile uint8_t powerstatus = false;
 
 RotaryEncoder encoder_vol(VOL_A, VOL_B);
+
+#define SPIDSP_SCK PB14
+#define SPIDSP_MOSI PB15
+uint16_t volumeposition = 48;
+
+DSPControl DSP (SPIDSP_SCK,SPIDSP_MOSI, volumeposition, 10);
 
 void encoderISR()
 {
@@ -83,10 +91,8 @@ uint8_t disp_init4[] =
 
 
 
-//#define SPIDSP_CS PA15
-#define SPIDSP_SCK PB14
-//#define SPIDSP_MISO PB14
-#define SPIDSP_MOSI PB15
+
+
 
 #define DISP_SPI_CS PA15
 #define DISP_SPI_MOSI PB5
@@ -208,12 +214,12 @@ void setup ()
             for (k = 0; k < 8; k++)
             {
                 digitalWrite(DispClockPin, LOW);
-                delay_us(2);
+                DSP.delay_us(2);
                 //digitalWrite(DispDataPin, LOW);
                 digitalWrite(DispDataPin, (data[i] & (1 << k)));
-                delay_us(2);
+                DSP.delay_us(2);
                 digitalWrite(DispClockPin, HIGH);
-                delay_us(2);
+                DSP.delay_us(2);
                 //digitalWrite(DispClockPin, LOW);
                 //delay_us(1);
                 //digitalWrite(DispDataPin, LOW);
@@ -222,6 +228,6 @@ void setup ()
             
             digitalWrite(DispClockPin, HIGH);
             digitalWrite(DispDataPin, LOW);
-            delay_us(100);
+            DSP.delay_us(100);
         }
     }
