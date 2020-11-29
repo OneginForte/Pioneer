@@ -136,26 +136,31 @@ void setup ()
 
     }
     */
+
+
+
     powerstatus = true;
 
     digitalWrite(PowerON, HIGH);
     digitalWrite(POWERLED, LOW);
+    delay (100);
+    DSP.begin(); //prepare DSP
+
 
     pinMode(DISP_SPI_CS, OUTPUT);
     digitalWrite(DISP_SPI_CS, LOW);
+
     pinMode(DISP_RESET, OUTPUT);
-     pinMode(DISP_SPI_MOSI, OUTPUT);
-    digitalWrite(DISP_SPI_MOSI, HIGH);
+    digitalWrite(DISP_SPI_MOSI, LOW);
+
+    pinMode(DISP_SPI_MOSI, OUTPUT);
+    digitalWrite(DISP_SPI_MOSI, LOW);
 
     pinMode(DISP_SPI_SCK, OUTPUT);
     digitalWrite(DISP_SPI_SCK, HIGH);
 
-
-
     delay(100);
-    //SPIdisp.begin(); //prepare and start SPI
-    //SPIdisp.beginTransaction(spiDispSettings);
-
+  
     encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
 
     digitalWrite(DISP_RESET, HIGH);

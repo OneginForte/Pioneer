@@ -2,10 +2,35 @@
 /*
    This is an Arduino library for 
 
-   written by : enjoyneering79
-   sourse code: https://github.com/enjoyneering/
+   written by : OneginForte
+   sourse code: https://github.com/OneginForte/
 
+    The control data is 16 bit instructions with a latch bit at the end.
+    Lowest 4 bits register address. 0-5... 
+    The remaining 12 bits determine the contents of the registers
+    
+    However datasheet specified sent init chain to addresses from 0 to 5
+    0,1,2,3...3,4,5 Adress 3 must init every of 8 channel (for BD3473KS2)
 
+    0 adress input selector external channel to MAIN and REC internal channel. 0h00x0 - MUTE
+      IN    REC
+    xxxxxx|xxxxxx|0000
+    IN1 - 0h04xx, IN2 - 0h08xx, IN3 - 0h0Cxx, IN4 - 0h10xx, IN5 - 0h14xx,
+    IN6 - 0x1800, IN7 - 0x1C00, IN8 - 0x2000, IN9 - 0x2400, IN10 - 0x2800,
+    IN11 - 0x2C00, IN12 - 0x3000, IN13 - 0x3400, IN14 - 0x3800, IN15 - 0x3C00,
+    IN16 - 0x4000, IN17 - 0x4400, IN18 - 0x4800
+
+    1 adress input selector to SUB1 and SUB2 channels. 0h0001 - MUTE
+      SUB1   SUB2
+    0000000|000000|0001
+    
+    From 0h0411 to 0h4921
+
+    2 adress mode selector for channels MAIN, MULTI1, MULTI2 and ADC exit attenuation
+
+    Not used channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011
+    0h1xx3 volume range 0dB to +24dB, 0h0xx3 volume range 0 to -95dB
+    FR - 0h0xx3, FL - 2xx3, SW - 0h4xx3, C- 0h6xx3, SR - 0h8xx3, SL - 0hAxx3, SBR - 0hCxx3, SBL - 0hExx3 
 
    Frameworks & Libraries:
    ATtiny  Core          - https://github.com/SpenceKonde/ATTinyCore
@@ -33,6 +58,20 @@ uint8_t _dsp_mosi = dsp_sck;
 uint8_t _volume = volume;
 uint8_t _channel = channel; 
 }
+
+__STATIC_INLINE void DWT_Init(void)
+              {
+              CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // разрешаем использовать счётчик
+              DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;            // запускаем счётчик
+              };
+
+__STATIC_INLINE void _delay_us(uint32_t us)
+              {
+              uint32_t us_count_tic = us * (SystemCoreClock / 1000000U);
+              DWT->CYCCNT = 0U;
+              while (DWT->CYCCNT < us_count_tic);
+              };
+
 
 /**************************************************************************/
 /*
@@ -80,7 +119,7 @@ void DSPControl::begin(void)
     for (size_t i = 0; i < 8; i++) //init DSP
     {
         shift16(_dsp_mosi, _dsp_sck, sound_init[i]);
-        delay_us(10);
+        _delay_us(10);
     }
 
 
@@ -149,3 +188,4 @@ void shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val)
         _delay_us(1);
         digitalWrite(DataPin, LOW);
     }
+
