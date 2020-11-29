@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include "main.h"
-//#include <stm32yyxx_ll_gpio.h>
+
 #include <RotaryEncoder.h>
-//#include <include/gpio.h>
+#include "DSPControl.h"
+
 //#include <Wire.h>
-#include <SPI.h>
+//#include <SPI.h>
 //#include <stdint.h>
 //#include <delay.h>
 
@@ -13,36 +14,26 @@
 #define BUTTON PA10 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
 uint16_t buttonCounter = 0;
-uint16_t volumeposition = 48;
+
+//DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, uint8_t channel);
+volatile uint8_t powerstatus = false;
 
 RotaryEncoder encoder_vol(VOL_A, VOL_B);
+
+#define SPIDSP_SCK PB14
+#define SPIDSP_MOSI PB15
+int16_t volumeposition = 48;
+
+DSPControl DSP (SPIDSP_SCK,SPIDSP_MOSI, volumeposition, 10);
 
 void encoderISR()
 {
     encoder_vol.readAB();
 }
-/*
-void ButtonISR()
-{
-    encoder_vol.readPushButton();
-}
-*/
-void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint32_t ulBitOrder, uint16_t ulVal);
 
-void DispSend(uint8_t *data, uint8_t size);
 
-    __STATIC_INLINE void DWT_Init(void)
-{
-    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // разрешаем использовать счётчик
-    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;            // запускаем счётчик
-}
 
-__STATIC_INLINE void delay_us(uint32_t us)
-{
-    uint32_t us_count_tic = us * (SystemCoreClock / 1000000U);
-    DWT->CYCCNT = 0U;
-    while (DWT->CYCCNT < us_count_tic);
-}
+void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint8_t *data, uint8_t size);
 
 
 
@@ -61,7 +52,7 @@ uint8_t disp_init2[] =
     0x13, 
     0x11, 
     0x11, 
-    'A','N','T','O','N',' ','M','E','L','N','I','K','O','V',  //14 letters
+    ' ',' ',' ','P','O','W','E','R',' ','O','N',' ',' ',' ',  //14 letters 
     0x00, 
     0x3F, 
     0x00
@@ -98,37 +89,14 @@ uint8_t disp_init4[] =
     0x00
     };
 
-uint16_t sound_init[] = {
-    0x2800, //input select IN10 to MAIN.
-    0x0001, //input select SUB1 & SUB2
-    0x4002, //mode L+R to MAIN
-    0x10a3, //volume FR 0x0303 +24dB, 0x0003 0dB, 0x0BF3 -95dB
-    0x30a3, //volume FL 0x2303 +24dB, 0x2003 0dB, 0x2BF3 -95dB
-    0x4BF3, //SW channel -95dB
-    0x6BF3, //C channel -95dB
-    0x8BF3, //SR channel -95dB
-    0xABF3, //SL channel -95dB
-    0xCBF3, //SBR channel -95dB
-    0xEBF3, //SBL channel -95dB
-    0x0008, //tone bass
-    0x0009, //tone treeble
-    0x0000, //test, as is from datasheet.
-    // However datasheet specified sent init chain to addresses from 0 to 5
-    // 0,1,2,3...3,4,5  adress 3 must init every of 8 channel. 
-    //Not used channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011
-    //1xx3 volume range 0dB to +24dB,  0xx3 volume range 0 to -95dB
-    //FR - 0xx3, FL - 2xx3, SW - 4xx3, C- 6xx3, SR - 8xx3, SL - Axx3, SBR - Cxx3, SBL - Exx3 
-    0x000B //volume change scheme
-};
 
-//#define SPIDSP_CS PA15
-#define SPIDSP_SCK PB14
-//#define SPIDSP_MISO PB14
-#define SPIDSP_MOSI PB15
+
+
+
 
 #define DISP_SPI_CS PA15
 #define DISP_SPI_MOSI PB5
-#define DISP_SPI_MISO PB4
+//#define DISP_SPI_MISO PB4
 #define DISP_SPI_SCK PB3
 #define DISP_RESET PB6
 
@@ -140,14 +108,14 @@ uint16_t sound_init[] = {
 #define POWERLED PC13
 
 //SPIClass::SPIClass(uint8_t mosi, uint8_t miso, uint8_t sclk, uint8_t ssel)
-SPIClass SPIdisp(DISP_SPI_MOSI, DISP_SPI_MISO, DISP_SPI_SCK);
-SPISettings spiDispSettings(10000, LSBFIRST, SPI_MODE3);
+//SPIClass SPIdisp(DISP_SPI_MOSI, DISP_SPI_MISO, DISP_SPI_SCK);
+//SPISettings spiDispSettings(10000, LSBFIRST, SPI_MODE3);
 
 void setup ()
 {
     // put your setup code here, to run once:
-    RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
-    AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;          //remap SPI1 pins to PB3,4,5
+    //RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
+    //AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;          //remap SPI1 pins to PB3,4,5
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE; //disable only JTAG for free more pins
 
     pinMode(POWERLED, OUTPUT);
@@ -161,44 +129,51 @@ void setup ()
     
     pinMode(POWERKEY, INPUT_PULLDOWN);
 
+    /*
     while (digitalReadFast((PinName)BUTTON) != HIGH)
     {
 
 
     }
+    */
+
+
+
+    powerstatus = true;
 
     digitalWrite(PowerON, HIGH);
     digitalWrite(POWERLED, LOW);
+    delay (100);
+    DSP.begin(); //prepare DSP
 
-    pinMode(DISP_RESET, OUTPUT);
-    digitalWrite(DISP_RESET, LOW);
 
     pinMode(DISP_SPI_CS, OUTPUT);
     digitalWrite(DISP_SPI_CS, LOW);
 
-    pinMode(SPIDSP_SCK, OUTPUT);
-    pinMode(SPIDSP_MOSI, OUTPUT);
-    digitalWrite(SPIDSP_SCK, LOW);
-    digitalWrite(SPIDSP_MOSI, LOW);
+    pinMode(DISP_RESET, OUTPUT);
+    digitalWrite(DISP_SPI_MOSI, LOW);
 
-    DWT_Init();
+    pinMode(DISP_SPI_MOSI, OUTPUT);
+    digitalWrite(DISP_SPI_MOSI, LOW);
 
-    SPIdisp.begin(); //prepare and start SPI
-    SPIdisp.beginTransaction(spiDispSettings);
+    pinMode(DISP_SPI_SCK, OUTPUT);
+    digitalWrite(DISP_SPI_SCK, HIGH);
 
+    delay(100);
+  
     encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
 
     digitalWrite(DISP_RESET, HIGH);
     delay (100);
     digitalWrite(DISP_SPI_CS, HIGH);
-    //delay(100);
-    DispSend(disp_init1, 6);
+    delay(1);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init1, 6);
     delay(12);
-    DispSend(disp_init2, 19);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init2, 19);
     delay(12);
-    DispSend(disp_init3, 9);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init3, 9);
     delay(12);
-    DispSend(disp_init4, 15);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init4, 15);
     delay(12);
     digitalWrite(DISP_SPI_CS, LOW);
 
@@ -209,7 +184,7 @@ void setup ()
     for (size_t i = 0; i < 8; i++) //init DSP
     {
         //SPIsnd.transfer16(sound_init[i], SPI_LAST);
-        shift16(SPIDSP_MOSI, SPIDSP_SCK, MSBFIRST, sound_init[i]);
+        shift16(SPIDSP_MOSI, SPIDSP_SCK, sound_init[i]);
         delay_us(10);
     }
     digitalWrite(F_RLY, HIGH);
@@ -231,34 +206,33 @@ void setup ()
         }
     }
 
-    void shift16(uint32_t ulDataPin, uint32_t ulClockPin, uint32_t ulBitOrder, uint16_t ulVal)
-    {
-        uint8_t i;
-        for (i = 0; i < 16; i++)
-        {
-            delay_us(1);
-            digitalWrite(ulDataPin, LOW);
-            delay_us(1);
-            digitalWrite(ulClockPin, LOW);
-            delay_us(1);
-            digitalWrite(ulDataPin, (ulVal & (1 << (15 - i))));
-            delay_us(1);
-            digitalWrite(ulClockPin, HIGH);
-            
-        }
-        delay_us(1);
-        digitalWrite(ulDataPin, HIGH);
-        delay_us(1);
-        digitalWrite(ulClockPin, LOW);
-        delay_us(1);
-        digitalWrite(ulDataPin, LOW);
-    }
 
-    void DispSend(uint8_t *data, uint8_t size)
+
+    void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint8_t *data, uint8_t size)
     {
         for (size_t i = 0; i < size; i++)
             {
-            SPIdisp.transfer(data[i]);
-            delay_us(100);
+            uint8_t k;
+            //digitalWrite(DispClockPin, LOW);
+            //digitalWrite(DispDataPin, LOW);
+            //delay_us(1);
+            for (k = 0; k < 8; k++)
+            {
+                digitalWrite(DispClockPin, LOW);
+                DSP.delay_us(2);
+                //digitalWrite(DispDataPin, LOW);
+                digitalWrite(DispDataPin, (data[i] & (1 << k)));
+                DSP.delay_us(2);
+                digitalWrite(DispClockPin, HIGH);
+                DSP.delay_us(2);
+                //digitalWrite(DispClockPin, LOW);
+                //delay_us(1);
+                //digitalWrite(DispDataPin, LOW);
+                //digitalWrite(DispClockPin, HIGH);
+            }
+            
+            digitalWrite(DispClockPin, HIGH);
+            digitalWrite(DispDataPin, LOW);
+            DSP.delay_us(100);
         }
     }
