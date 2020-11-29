@@ -51,12 +51,12 @@
     Constructor
 */
 /**************************************************************************/
-DSPControl::DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, uint8_t channel)
+DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, uint8_t channel)
 {
-uint8_t _dsp_sck = dsp_sck;
-uint8_t _dsp_mosi = dsp_sck;
-uint8_t _volume = volume;
-uint8_t _channel = channel; 
+_dsp_sck = dsp_sck;
+_dsp_mosi = dsp_sck;
+_volume = volume;
+_channel = channel; 
 }
 
 __STATIC_INLINE void DWT_Init(void)
@@ -77,7 +77,7 @@ __STATIC_INLINE void _delay_us(uint32_t us)
 /*
     begin
 
-    Sets exit pins, init DWT.
+    Sets exit pins, init DWT, init DSP.
 
     NOTE:
 
@@ -136,7 +136,7 @@ void DSPControl::begin(void)
 
 */
 /**************************************************************************/
-void  setvolume(uint8_t volume, uint8_t channel)
+void  DSPControl::setvolume(uint8_t volume, uint8_t channel)
 {
    delay(1);
 }
@@ -151,7 +151,7 @@ void  setvolume(uint8_t volume, uint8_t channel)
 
 */
 /**************************************************************************/
-void  setmute(uint8_t channel)
+void  DSPControl::setmute(uint8_t channel)
 {
 
 delay(1);
@@ -163,10 +163,10 @@ delay(1);
 /*
     shift16()
 
-    Software SPI process
+    Software SPI process wth latch bit
 */
 /**************************************************************************/
-void shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val)
+void DSPControl::shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val)
     {
         uint8_t i;
         for (i = 0; i < 16; i++)
@@ -179,13 +179,12 @@ void shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val)
             digitalWrite(DataPin, (Val & (1 << (15 - i))));
             _delay_us(1);
             digitalWrite(ClockPin, HIGH);
-            
         }
         _delay_us(1);
-        digitalWrite(DataPin, HIGH);
+        digitalWrite(DataPin, HIGH);     //latch on
         _delay_us(1);
         digitalWrite(ClockPin, LOW);
         _delay_us(1);
-        digitalWrite(DataPin, LOW);
+        digitalWrite(DataPin, LOW);      //latch off
     }
 

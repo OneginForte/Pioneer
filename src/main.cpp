@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include "main.h"
-//#include <stm32yyxx_ll_gpio.h>
+
 #include <RotaryEncoder.h>
 #include "DSPControl.h"
-//#include <include/gpio.h>
+
 //#include <Wire.h>
 //#include <SPI.h>
 //#include <stdint.h>
@@ -22,7 +22,7 @@ RotaryEncoder encoder_vol(VOL_A, VOL_B);
 
 #define SPIDSP_SCK PB14
 #define SPIDSP_MOSI PB15
-uint16_t volumeposition = 48;
+int16_t volumeposition = 48;
 
 DSPControl DSP (SPIDSP_SCK,SPIDSP_MOSI, volumeposition, 10);
 
