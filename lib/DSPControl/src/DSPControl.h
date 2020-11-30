@@ -39,15 +39,36 @@
 class DSPControl
 {
   public:
-  
-  DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi,uint16_t volume, uint8_t channel);
+    typedef enum Channel
+    {
+      IN1,
+      IN2,
+      IN3,
+      IN4,
+      IN5,
+      IN6,
+      IN7,
+      IN8,
+      IN9,
+      IN10,
+      IN11,
+      IN12,
+      IN13,
+      IN14,
+      IN15,
+      IN16,
+      IN17,
+      IN18
+    } channel_t;
 
-  void     begin(void);
-  void     setvolume(uint8_t volume, uint8_t channel);
-  void     setmute(uint8_t channel);
+    DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, channel_t channelin);
 
-  __STATIC_INLINE void delay_us(uint32_t us)
-     {
+    void begin(void);
+    void setvolume(uint8_t volume, channel_t channelin);
+    void setmute(channel_t channelin);
+
+    __STATIC_INLINE void delay_us(uint32_t us)
+    {
       uint32_t us_count_tic = us * (SystemCoreClock / 1000000U);
       DWT->CYCCNT = 0U;
       while (DWT->CYCCNT < us_count_tic);
@@ -60,34 +81,11 @@ class DSPControl
   uint32_t _dsp_sck;
   uint32_t _dsp_mosi;
   uint16_t _volume;
-  uint8_t _channel; 
+  channel_t _channel;
 
-
-  enum channel
-  {
-  IN1,
-  IN2,
-  IN3,
-  IN4,  
-  IN5,
-  IN6,
-  IN7,
-  IN8,
-  IN9,
-  IN10,
-  IN11,
-  IN12,
-  IN13,
-  IN14,
-  IN15,
-  IN16,
-  IN17,
-  IN18
-  };
-
-	typedef struct {
-  channel chanels;
-  uint16_t nr;
+  typedef struct {
+    channel_t channels;
+    uint16_t chncode;
 	} volume_t;
 
   volume_t volume_m[18] = {
@@ -114,7 +112,7 @@ class DSPControl
   
    
   protected:
-    
+
 
 };
 

@@ -10,9 +10,9 @@
   "repository":
   {
     "type": "git",
-    "url":  ""
+    "url":  "https://github.com/OneginForte/Pioneer/lib/DSPControl"
   },
-  "version":    "0.0.1",
+  "version":    "0.0.2",
   "frameworks": "arduino",
   "platforms":  "*"
 }

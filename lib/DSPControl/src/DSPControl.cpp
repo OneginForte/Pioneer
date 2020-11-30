@@ -51,12 +51,12 @@
     Constructor
 */
 /**************************************************************************/
-DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, uint8_t channel)
+DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, channel_t channelin)
 {
 _dsp_sck = dsp_sck;
 _dsp_mosi = dsp_sck;
 _volume = volume;
-_channel = channel; 
+_channel = channelin; 
 }
 
 __STATIC_INLINE void DWT_Init(void)
@@ -136,7 +136,7 @@ void DSPControl::begin(void)
 
 */
 /**************************************************************************/
-void  DSPControl::setvolume(uint8_t volume, uint8_t channel)
+void DSPControl::setvolume(uint8_t volume, channel_t channelin)
 {
    delay(1);
 }
@@ -151,7 +151,7 @@ void  DSPControl::setvolume(uint8_t volume, uint8_t channel)
 
 */
 /**************************************************************************/
-void  DSPControl::setmute(uint8_t channel)
+void DSPControl::setmute(channel_t channelin)
 {
 
 delay(1);
@@ -163,7 +163,7 @@ delay(1);
 /*
     shift16()
 
-    Software SPI process wth latch bit
+    Software 16 bit  SPI process with latch bit, MSB first
 */
 /**************************************************************************/
 void DSPControl::shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val)

@@ -2,11 +2,11 @@
 
 struct vlStruct 
     { 
-        char message [6];
+        char message[6];
         uint16_t volumestr;
     };
 
-const vlStruct volume[]    //239 values
+const vlStruct volume_m[]    //239 values
     {
 "+24",0x0300,
 "+23,5",0x02F0,
@@ -56,7 +56,7 @@ const vlStruct volume[]    //239 values
 "+1,5",0x0030,
 "+1",0x0020,
 "+0,5",0x0010,
-" 0",0x0000,
+"0",0x0000,
 "-0,5",0x0010,
 "-1",0x0020,
 "-1,5",0x0030,

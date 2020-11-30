@@ -15,16 +15,21 @@
 
 uint16_t buttonCounter = 0;
 
-//DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, uint8_t channel);
+//DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, Channel channel);
 volatile uint8_t powerstatus = false;
 
 RotaryEncoder encoder_vol(VOL_A, VOL_B);
 
+//ini DSP pins and default value
 #define SPIDSP_SCK PB14
 #define SPIDSP_MOSI PB15
-int16_t volumeposition = 48;
+uint16_t volumeposition = 48; //default volume 0dB
 
-DSPControl DSP (SPIDSP_SCK,SPIDSP_MOSI, volumeposition, 10);
+DSPControl::Channel _chan;  
+chan  = IN10; //default channel
+
+DSPControl DSP(SPIDSP_SCK,SPIDSP_MOSI, volumeposition, chan);
+
 
 void encoderISR()
 {
@@ -129,19 +134,18 @@ void setup ()
     
     pinMode(POWERKEY, INPUT_PULLDOWN);
 
-    /*
+    
     while (digitalReadFast((PinName)BUTTON) != HIGH)
     {
 
+    digitalWrite(PowerON, HIGH);
 
     }
-    */
-
-
+    
 
     powerstatus = true;
 
-    digitalWrite(PowerON, HIGH);
+
     digitalWrite(POWERLED, LOW);
     delay (100);
     DSP.begin(); //prepare DSP
