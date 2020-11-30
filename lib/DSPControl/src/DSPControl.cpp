@@ -28,7 +28,7 @@
 
     2 adress mode selector for channels MAIN, MULTI1, MULTI2 and ADC exit attenuation
 
-    Not used channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011
+    Not used exit channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011  xxx - is nr of output channel
     0h1xx3 volume range 0dB to +24dB, 0h0xx3 volume range 0 to -95dB
     FR - 0h0xx3, FL - 2xx3, SW - 0h4xx3, C- 0h6xx3, SR - 0h8xx3, SL - 0hAxx3, SBR - 0hCxx3, SBL - 0hExx3 
 
@@ -51,12 +51,12 @@
     Constructor
 */
 /**************************************************************************/
-DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, channel_t channelin)
+DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, uint8_t channelin)
 {
 _dsp_sck = dsp_sck;
 _dsp_mosi = dsp_sck;
 _volume = volume;
-_channel = channelin; 
+_channel = (channel_t)channelin; 
 }
 
 __STATIC_INLINE void DWT_Init(void)
@@ -136,7 +136,7 @@ void DSPControl::begin(void)
 
 */
 /**************************************************************************/
-void DSPControl::setvolume(uint8_t volume, channel_t channelin)
+void DSPControl::setvolume(uint8_t volume, uint8_t channelin)
 {
    delay(1);
 }
@@ -151,7 +151,7 @@ void DSPControl::setvolume(uint8_t volume, channel_t channelin)
 
 */
 /**************************************************************************/
-void DSPControl::setmute(channel_t channelin)
+void DSPControl::setmute(uint8_t channelin)
 {
 
 delay(1);

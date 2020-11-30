@@ -13,6 +13,28 @@
 #define VOL_B PB9  //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 #define BUTTON PA10 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
+enum channel_t : uint8_t
+{
+    IN1,
+    IN2,
+    IN3,
+    IN4,
+    IN5,
+    IN6,
+    IN7,
+    IN8,
+    IN9,
+    IN10,
+    IN11,
+    IN12,
+    IN13,
+    IN14,
+    IN15,
+    IN16,
+    IN17,
+    IN18
+};
+
 uint16_t buttonCounter = 0;
 
 //DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, Channel channel);
@@ -25,10 +47,10 @@ RotaryEncoder encoder_vol(VOL_A, VOL_B);
 #define SPIDSP_MOSI PB15
 uint16_t volumeposition = 48; //default volume 0dB
 
-DSPControl::Channel _chan;  
-chan  = IN10; //default channel
+channel_t chan;
+//chan = IN10; //default channel
 
-DSPControl DSP(SPIDSP_SCK,SPIDSP_MOSI, volumeposition, chan);
+//DSPControl DSP(SPIDSP_SCK,SPIDSP_MOSI, volumeposition, (uint8_)chan);
 
 
 void encoderISR()
@@ -36,11 +58,15 @@ void encoderISR()
     encoder_vol.readAB();
 }
 
+__STATIC_INLINE void delay_us(uint32_t us)
+{
+    uint32_t us_count_tic = us * (SystemCoreClock / 1000000U);
+    DWT->CYCCNT = 0U;
+    while (DWT->CYCCNT < us_count_tic)
+        ;
+};
 
-
-void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint8_t *data, uint8_t size);
-
-
+void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint32_t DispCSkPin, uint8_t *data, uint8_t size);
 
 uint8_t disp_init1[] = 
     {
@@ -131,55 +157,51 @@ void setup ()
     digitalWrite(F_RLY, LOW);
     pinMode(XSMUTE, OUTPUT);
     digitalWrite(XSMUTE, LOW);
-    
-    pinMode(POWERKEY, INPUT_PULLDOWN);
-
-    
-    while (digitalReadFast((PinName)BUTTON) != HIGH)
-    {
-
-    digitalWrite(PowerON, HIGH);
-
-    }
-    
-
-    powerstatus = true;
-
-
-    digitalWrite(POWERLED, LOW);
-    delay (100);
-    DSP.begin(); //prepare DSP
-
 
     pinMode(DISP_SPI_CS, OUTPUT);
     digitalWrite(DISP_SPI_CS, LOW);
 
     pinMode(DISP_RESET, OUTPUT);
-    digitalWrite(DISP_SPI_MOSI, LOW);
+    digitalWrite(DISP_RESET, LOW);
+
+    pinMode(POWERKEY, INPUT_PULLDOWN);
+
+        while (digitalRead(POWERKEY) != HIGH)
+    {
+
+    
+
+    }
+
+    digitalWrite(PowerON, HIGH);
+    powerstatus = true;
+
+
+    digitalWrite(POWERLED, LOW);
+
+    //DSP.begin(); //prepare DSP
+
 
     pinMode(DISP_SPI_MOSI, OUTPUT);
     digitalWrite(DISP_SPI_MOSI, LOW);
-
     pinMode(DISP_SPI_SCK, OUTPUT);
     digitalWrite(DISP_SPI_SCK, HIGH);
-
-    delay(100);
-  
+    digitalWrite(DISP_RESET, HIGH);
+    delay(1000);
     encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
 
-    digitalWrite(DISP_RESET, HIGH);
-    delay (100);
-    digitalWrite(DISP_SPI_CS, HIGH);
+    delay(100);
+
     delay(1);
-    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init1, 6);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init1, 6);
+    delay(20);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init2, 19);
+    delay(20);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init3, 9);
+    delay(20);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init4, 15);
     delay(12);
-    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init2, 19);
-    delay(12);
-    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init3, 9);
-    delay(12);
-    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, disp_init4, 15);
-    delay(12);
-    digitalWrite(DISP_SPI_CS, LOW);
+
 
     attachInterrupt(digitalPinToInterrupt(VOL_A), encoderISR, CHANGE);         //call encoderISR()    every high->low or low->high changes
     //attachInterrupt(digitalPinToInterrupt(BUTTON), encoderButtonISR, FALLING); //call pushButtonISR() every high->low              changes
@@ -199,44 +221,46 @@ void setup ()
     void loop()
     {
         // put your main code here, to run repeatedly:
-        delay(1000);
+        delay(100);
         volumeposition = encoder_vol.getPosition();
 
-        if (digitalReadFast((PinName)BUTTON) == HIGH)
+        if (digitalRead(POWERKEY) == HIGH)
         {
+            
             digitalWrite(F_RLY, LOW);
             digitalWrite(XSMUTE, LOW);
             digitalWrite(PowerON, LOW);
+            digitalWrite(POWERLED, HIGH);
+            delay(1000);
+            NVIC_SystemReset();
         }
     }
 
-
-
-    void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint8_t *data, uint8_t size)
+    void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint32_t DispCSPin, uint8_t *data, uint8_t size)
     {
+        digitalWrite(DispCSPin, HIGH);
+        //delay_us(100);
         for (size_t i = 0; i < size; i++)
             {
             uint8_t k;
-            //digitalWrite(DispClockPin, LOW);
-            //digitalWrite(DispDataPin, LOW);
-            //delay_us(1);
+            delay_us(130);
+            digitalWrite(DispClockPin, LOW);
+            delay_us(3);
             for (k = 0; k < 8; k++)
             {
                 digitalWrite(DispClockPin, LOW);
-                DSP.delay_us(2);
-                //digitalWrite(DispDataPin, LOW);
+                delay_us(2);
                 digitalWrite(DispDataPin, (data[i] & (1 << k)));
-                DSP.delay_us(2);
+                delay_us(3);
                 digitalWrite(DispClockPin, HIGH);
-                DSP.delay_us(2);
-                //digitalWrite(DispClockPin, LOW);
-                //delay_us(1);
-                //digitalWrite(DispDataPin, LOW);
-                //digitalWrite(DispClockPin, HIGH);
+                delay_us(3);
+
             }
-            
+            delay_us(2);
             digitalWrite(DispClockPin, HIGH);
+            
             digitalWrite(DispDataPin, LOW);
-            DSP.delay_us(100);
-        }
+            //delay_us(100);
+            }
+        digitalWrite(DispCSPin, LOW);
     }

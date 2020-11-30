@@ -39,7 +39,7 @@
 class DSPControl
 {
   public:
-    typedef enum Channel
+    typedef enum Channel : uint8_t
     {
       IN1,
       IN2,
@@ -61,11 +61,11 @@ class DSPControl
       IN18
     } channel_t;
 
-    DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, channel_t channelin);
+    DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, uint8_t channelin);
 
     void begin(void);
-    void setvolume(uint8_t volume, channel_t channelin);
-    void setmute(channel_t channelin);
+    void setvolume(uint8_t volume, uint8_t channelin);
+    void setmute(uint8_t channelin);
 
     __STATIC_INLINE void delay_us(uint32_t us)
     {
