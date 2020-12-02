@@ -3,7 +3,7 @@
 
 #include <RotaryEncoder.h>
 #include "DSPControl.h"
-
+#include "stm32f1xx.h"
 //#include <Wire.h>
 //#include <SPI.h>
 //#include <stdint.h>
@@ -182,7 +182,7 @@ void setup ()
 
     encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
     encoder_vol.setPosition(volumeposition);
-    
+
     digitalWrite(DISP_SPI_SCK, HIGH);
     digitalWrite(DISP_RESET, HIGH);
     
@@ -213,6 +213,16 @@ void setup ()
     digitalWrite(F_RLY, HIGH);
     digitalWrite(XSMUTE, HIGH);
     
+    /*
+    * PA6 - TIM3_CH1
+    * PA7 - TIM3_CH1
+    */
+    /* GPIOA Clock */
+
+
+    /* Encoder Initialization */
+    /* TIM3 Clock */
+
 }
 
     void loop()
