@@ -109,6 +109,8 @@ void DSPControl::begin(void)
     0x000B //volume change scheme
     };
     
+    
+    
     pinMode(_dsp_sck, OUTPUT);
     digitalWrite(_dsp_sck, LOW);
     pinMode(_dsp_mosi, OUTPUT);

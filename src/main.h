@@ -6,7 +6,7 @@ struct vlStruct
         uint16_t volumestr;
     };
 
-const vlStruct volume_m[]    //239 values
+const vlStruct volume_m[]    //238 values
     {
 "+24",0x0300,
 "+23,5",0x02F0,

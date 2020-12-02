@@ -50,7 +50,7 @@ uint16_t volumeposition = 48; //default volume 0dB
 channel_t chan;
 //chan = IN10; //default channel
 
-//DSPControl DSP(SPIDSP_SCK,SPIDSP_MOSI, volumeposition, (uint8_)chan);
+DSPControl DSP(SPIDSP_SCK,SPIDSP_MOSI, volumeposition, IN10);
 
 
 void encoderISR()
@@ -68,7 +68,7 @@ __STATIC_INLINE void delay_us(uint32_t us)
 
 void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint32_t DispCSkPin, uint8_t *data, uint8_t size);
 
-uint8_t disp_init1[] = 
+uint8_t disp_init1[6] = 
     {
     0x05,
     0x11,
@@ -78,29 +78,29 @@ uint8_t disp_init1[] =
     0x00
     };
 
-uint8_t disp_init2[] =
+uint8_t disp_init2[20] =
     {
-    0x13, 
-    0x11, 
-    0x11, 
-    ' ',' ',' ','P','O','W','E','R',' ','O','N',' ',' ',' ',  //14 letters 
-    0x00, 
-    0x3F, 
-    0x00
-    };
+        0x13,
+        0x11,
+        0x11,
+        'M', 'E', 'L', 'N', 'I', 'K', 'O', 'V', ' ', 'A', 'N', 'T', 'O', 'N', //14 letters
+        //' ', ' ', ' ', 'P', 'O', 'W', 'E', 'R', ' ', 'O', 'N', ' ', ' ', ' ', //14 letters
+        0x00,
+        0x3A,//0x3F,
+        0x00};
 
-uint8_t disp_init3[] =
+uint8_t disp_init3[10] =
     {
     0x09,
     0x11,
     0x12,
-    ' ',' ',' ',' ', //3 letters
+    '+','1','0','0', //3 letters
     0x00,
     0xAC,
     0x00
     };
 
-uint8_t disp_init4[] =
+uint8_t disp_init4[16] =
     {
     0x0F,
     0x11,
@@ -158,11 +158,16 @@ void setup ()
     pinMode(XSMUTE, OUTPUT);
     digitalWrite(XSMUTE, LOW);
 
+    pinMode(DISP_RESET, OUTPUT);
+    digitalWrite(DISP_RESET, LOW);//LOW
+
     pinMode(DISP_SPI_CS, OUTPUT);
     digitalWrite(DISP_SPI_CS, LOW);
 
-    pinMode(DISP_RESET, OUTPUT);
-    digitalWrite(DISP_RESET, LOW);
+    pinMode(DISP_SPI_MOSI, OUTPUT);
+    digitalWrite(DISP_SPI_MOSI, LOW);
+    pinMode(DISP_SPI_SCK, OUTPUT);
+    digitalWrite(DISP_SPI_SCK, HIGH);
 
     pinMode(POWERKEY, INPUT_PULLDOWN);
 
@@ -175,31 +180,29 @@ void setup ()
 
     digitalWrite(PowerON, HIGH);
     powerstatus = true;
-
+    delay(1000);
 
     digitalWrite(POWERLED, LOW);
 
-    //DSP.begin(); //prepare DSP
+    DSP.begin(); //prepare DSP
 
 
-    pinMode(DISP_SPI_MOSI, OUTPUT);
-    digitalWrite(DISP_SPI_MOSI, LOW);
-    pinMode(DISP_SPI_SCK, OUTPUT);
-    digitalWrite(DISP_SPI_SCK, HIGH);
-    digitalWrite(DISP_RESET, HIGH);
-    delay(1000);
+
+
+
     encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
-
+    encoder_vol.setPosition(volumeposition);
+    digitalWrite(DISP_RESET, HIGH);
     delay(100);
 
     delay(1);
-    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init1, 6);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init1, 4);
     delay(20);
-    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init2, 19);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init2, 18);
     delay(20);
-    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init3, 9);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init3, 8);
     delay(20);
-    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init4, 15);
+    DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init4, 14);
     delay(12);
 
 
@@ -213,9 +216,10 @@ void setup ()
         shift16(SPIDSP_MOSI, SPIDSP_SCK, sound_init[i]);
         delay_us(10);
     }
+    */
     digitalWrite(F_RLY, HIGH);
     digitalWrite(XSMUTE, HIGH);
-    */
+    
 }
 
     void loop()
@@ -224,9 +228,21 @@ void setup ()
         delay(100);
         volumeposition = encoder_vol.getPosition();
 
+        if (volumeposition > 237)
+        {
+            volumeposition = 237;
+            encoder_vol.setPosition(volumeposition);
+        }
+        else if (volumeposition < 0)
+        {
+            volumeposition = 0;
+            encoder_vol.setPosition(volumeposition);
+        }
+
         if (digitalRead(POWERKEY) == HIGH)
         {
-            
+            digitalWrite(DISP_RESET, LOW);
+            //delay(10);
             digitalWrite(F_RLY, LOW);
             digitalWrite(XSMUTE, LOW);
             digitalWrite(PowerON, LOW);
@@ -236,31 +252,41 @@ void setup ()
         }
     }
 
+    __STATIC_INLINE void DispSB(uint32_t DataPin, uint32_t ClockPin, uint8_t byte)
+    {
+        uint8_t k;
+
+        delay_us(120);
+        digitalWrite(ClockPin, LOW);
+        delay_us(2);
+        for (k = 0; k < 8; k++)
+        {
+            digitalWrite(ClockPin, LOW);
+            delay_us(2);
+            digitalWrite(DataPin, (byte & (1 << k)));
+            delay_us(2);
+            digitalWrite(ClockPin, HIGH);
+            delay_us(2);
+        };
+        delay_us(2);
+        digitalWrite(ClockPin, HIGH);
+        digitalWrite(DataPin, LOW);
+    }
+
     void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint32_t DispCSPin, uint8_t *data, uint8_t size)
     {
+        uint8_t chksumm = 0;
+        uint8_t i;
         digitalWrite(DispCSPin, HIGH);
-        //delay_us(100);
-        for (size_t i = 0; i < size; i++)
-            {
-            uint8_t k;
-            delay_us(130);
-            digitalWrite(DispClockPin, LOW);
-            delay_us(3);
-            for (k = 0; k < 8; k++)
-            {
-                digitalWrite(DispClockPin, LOW);
-                delay_us(2);
-                digitalWrite(DispDataPin, (data[i] & (1 << k)));
-                delay_us(3);
-                digitalWrite(DispClockPin, HIGH);
-                delay_us(3);
 
-            }
-            delay_us(2);
-            digitalWrite(DispClockPin, HIGH);
-            
-            digitalWrite(DispDataPin, LOW);
-            //delay_us(100);
-            }
+        for (i = 0; i < size; i++)
+        {
+            chksumm = chksumm + data[i];
+            DispSB(DispDataPin, DispClockPin, data[i]);
+        }
+        DispSB(DispDataPin, DispClockPin, chksumm);
+        DispSB(DispDataPin, DispClockPin, 0);
+
+        delay_us(4);
         digitalWrite(DispCSPin, LOW);
     }
