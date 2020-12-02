@@ -135,8 +135,8 @@ void RotaryEncoder::readAB()
     case 0b0001:                                        //CW states, 1 count  per click
   //case 0b0001: case 0b1110:                           //CW states, 2 counts per click
     #else                                               //fast MCU
-    case 0b0001: case 0b1110:                           //CW states, 1 count  per click
-  //case 0b0001: case 0b1110: case 0b1000: case 0b0111: //CW states, 2 counts per click
+    //case 0b0001: case 0b1110:                           //CW states, 1 count  per click
+    case 0b0001: case 0b1110: case 0b1000: case 0b0111: //CW states, 2 counts per click
     #endif
       _counter++;
       break;
@@ -145,8 +145,8 @@ void RotaryEncoder::readAB()
     case 0b0100:                                        //CCW states, 1 count  per click
   //case 0b0100: case 0b1011:                           //CCW states, 2 count  per click
     #else                                               //fast MCU
-    case 0b0100: case 0b1011:                           //CCW states, 1 count  per click
-  //case 0b0100: case 0b1011: case 0b0010: case 0b1101: //CCW states, 2 counts per click
+    //case 0b0100: case 0b1011:                           //CCW states, 1 count  per click
+    case 0b0100: case 0b1011: case 0b0010: case 0b1101: //CCW states, 2 counts per click
     #endif
       _counter--;
       break;

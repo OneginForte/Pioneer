@@ -9,8 +9,8 @@
 //#include <stdint.h>
 //#include <delay.h>
 
-#define VOL_A PB8  //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
-#define VOL_B PB9  //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define VOL_A PA8  //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define VOL_B PA9  //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 #define BUTTON PA10 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
 enum channel_t : uint8_t
@@ -83,7 +83,7 @@ uint8_t disp_init2[20] =
         0x13,
         0x11,
         0x11,
-        'M', 'E', 'L', 'N', 'I', 'K', 'O', 'V', ' ', 'A', 'N', 'T', 'O', 'N', //14 letters
+        ' ', 'S', 'v', 'e', 't', 'l', 'a', 'n', 'a', ' ', 'v', '0', '.', '1', //14 letters
         //' ', ' ', ' ', 'P', 'O', 'W', 'E', 'R', ' ', 'O', 'N', ' ', ' ', ' ', //14 letters
         0x00,
         0x3A,//0x3F,
@@ -94,7 +94,7 @@ uint8_t disp_init3[10] =
     0x09,
     0x11,
     0x12,
-    '+','1','0','0', //3 letters
+    '2',' ','0','0', //3 numbers, first digit 0-blank, 1-minus, 2-plus
     0x00,
     0xAC,
     0x00
@@ -121,10 +121,6 @@ uint8_t disp_init4[16] =
     };
 
 
-
-
-
-
 #define DISP_SPI_CS PA15
 #define DISP_SPI_MOSI PB5
 //#define DISP_SPI_MISO PB4
@@ -138,9 +134,7 @@ uint8_t disp_init4[16] =
 #define POWERKEY BUTTON
 #define POWERLED PC13
 
-//SPIClass::SPIClass(uint8_t mosi, uint8_t miso, uint8_t sclk, uint8_t ssel)
-//SPIClass SPIdisp(DISP_SPI_MOSI, DISP_SPI_MISO, DISP_SPI_SCK);
-//SPISettings spiDispSettings(10000, LSBFIRST, SPI_MODE3);
+
 
 void setup ()
 {
@@ -167,7 +161,7 @@ void setup ()
     pinMode(DISP_SPI_MOSI, OUTPUT);
     digitalWrite(DISP_SPI_MOSI, LOW);
     pinMode(DISP_SPI_SCK, OUTPUT);
-    digitalWrite(DISP_SPI_SCK, HIGH);
+
 
     pinMode(POWERKEY, INPUT_PULLDOWN);
 
@@ -186,13 +180,12 @@ void setup ()
 
     DSP.begin(); //prepare DSP
 
-
-
-
-
     encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
     encoder_vol.setPosition(volumeposition);
+    
+    digitalWrite(DISP_SPI_SCK, HIGH);
     digitalWrite(DISP_RESET, HIGH);
+    
     delay(100);
 
     delay(1);
@@ -255,7 +248,6 @@ void setup ()
     __STATIC_INLINE void DispSB(uint32_t DataPin, uint32_t ClockPin, uint8_t byte)
     {
         uint8_t k;
-
         delay_us(120);
         digitalWrite(ClockPin, LOW);
         delay_us(2);
@@ -287,6 +279,6 @@ void setup ()
         DispSB(DispDataPin, DispClockPin, chksumm);
         DispSB(DispDataPin, DispClockPin, 0);
 
-        delay_us(4);
+        delay_us(2);
         digitalWrite(DispCSPin, LOW);
     }
