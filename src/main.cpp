@@ -3,18 +3,23 @@
 
 #include <RotaryEncoder.h>
 #include "DSPControl.h"
+#include "stm32yyxx_hal_conf.h"
+#include "stm32f1xx_hal.h"
 #include "stm32f1xx.h"
+
+//#define USE_FULL_LL_DRIVER
 //#include <Wire.h>
 //#include <SPI.h>
 //#include <stdint.h>
 //#include <delay.h>
 
-void setup ()
+void setup()
 {
     // put your setup code here, to run once:
     //RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
     //AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;          //remap SPI1 pins to PB3,4,5
-    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE; //disable only JTAG for free more pins
+    //AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE; //disable only JTAG for free more pins
+    LL_GPIO_AF_Remap_SWJ_NOJTAG();
 
     pinMode(POWERLED, OUTPUT);
     digitalWrite(POWERLED, HIGH);
@@ -77,17 +82,36 @@ void setup ()
     
     digitalWrite(F_RLY, HIGH);
     digitalWrite(XSMUTE, HIGH);
+
     
-    /*
-    * PA6 - TIM3_CH1
-    * PA7 - TIM3_CH1
-    */
+    pinMode(VOL_A, INPUT_PULLUP);
+    pinMode(VOL_B, INPUT_PULLUP);
     /* GPIOA Clock */
 
+    LL_TIM_InitTypeDef TIM_InitStruct = {0};
 
-    /* Encoder Initialization */
-    /* TIM3 Clock */
 
+    /* Peripheral clock enable */
+    __HAL_RCC_TIM2_CLK_ENABLE();
+
+
+    LL_TIM_SetEncoderMode(TIM2, LL_TIM_ENCODERMODE_X4_TI12);
+    LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ACTIVEINPUT_DIRECTTI);
+    LL_TIM_IC_SetPrescaler(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ICPSC_DIV1);
+    LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_IC_FILTER_FDIV32_N8);
+    LL_TIM_IC_SetPolarity(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_IC_POLARITY_RISING);
+    LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ACTIVEINPUT_DIRECTTI);
+    LL_TIM_IC_SetPrescaler(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ICPSC_DIV1);
+    LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_FILTER_FDIV1);
+    LL_TIM_IC_SetPolarity(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_POLARITY_RISING);
+    TIM_InitStruct.Prescaler = 0;
+    TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
+    TIM_InitStruct.Autoreload = 65535;
+    TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+    LL_TIM_Init(TIM2, &TIM_InitStruct);
+    LL_TIM_EnableARRPreload(TIM2);
+    LL_TIM_SetTriggerOutput(TIM2, LL_TIM_TRGO_RESET);
+    LL_TIM_DisableMasterSlaveMode(TIM2);
 }
 
     void loop()

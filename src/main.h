@@ -2,8 +2,10 @@
 #include <RotaryEncoder.h>
 #include "DSPControl.h"
 
-#define VOL_A PA8   //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
-#define VOL_B PA9   //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define VOL_A PA0   //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define VOL_B PA1   //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define ENC1 PA8
+#define ENC2 PA9
 #define BUTTON PA10 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
 enum channel_tm : uint16_t
@@ -33,7 +35,7 @@ uint16_t buttonCounter = 0;
 //DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, Channel channel);
 volatile uint8_t powerstatus = false;
 
-RotaryEncoder encoder_vol(VOL_A, VOL_B);
+RotaryEncoder encoder_vol(ENC1, ENC2);
 
 //ini DSP pins and default value
 #define SPIDSP_SCK PB14
