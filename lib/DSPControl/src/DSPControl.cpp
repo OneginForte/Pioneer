@@ -51,7 +51,7 @@
     Constructor
 */
 /**************************************************************************/
-DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, uint8_t channelin)
+DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, uint16_t channelin)
 {
 _dsp_sck = dsp_sck;
 _dsp_mosi = dsp_sck;

@@ -1,4 +1,126 @@
 #include <Arduino.h>
+#include <RotaryEncoder.h>
+#include "DSPControl.h"
+
+#define VOL_A PA8   //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define VOL_B PA9   //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define BUTTON PA10 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
+
+enum channel_tm : uint16_t
+{
+    IN1 = 0x0400,
+    IN2 = 0x0800,
+    IN3 = 0x0C00,
+    IN4 = 0x1000,
+    IN5 = 0x1400,
+    IN6 = 0x1800,
+    IN7 = 0x1C00,
+    IN8 = 0x2000,
+    IN9 = 0x2400,
+    IN10 = 0x2800,
+    IN11 = 0x2C00,
+    IN12 = 0x3000,
+    IN13 = 0x3400,
+    IN14 = 0x3800,
+    IN15 = 0x3C00,
+    IN16 = 0x4000,
+    IN17 = 0x4400,
+    IN18 = 0x4800,
+};
+
+uint16_t buttonCounter = 0;
+
+//DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, Channel channel);
+volatile uint8_t powerstatus = false;
+
+RotaryEncoder encoder_vol(VOL_A, VOL_B);
+
+//ini DSP pins and default value
+#define SPIDSP_SCK PB14
+#define SPIDSP_MOSI PB15
+uint16_t volumeposition = 48; //default volume 0dB
+
+channel_tm chan = IN10;
+//chan = IN10; //default channel
+
+DSPControl DSP(SPIDSP_SCK, SPIDSP_MOSI, volumeposition, chan);
+
+void encoderISR()
+{
+    encoder_vol.readAB();
+}
+
+__STATIC_INLINE void delay_us(uint32_t us)
+{
+    uint32_t us_count_tic = us * (SystemCoreClock / 1000000U);
+    DWT->CYCCNT = 0U;
+    while (DWT->CYCCNT < us_count_tic)
+        ;
+};
+
+void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint32_t DispCSkPin, uint8_t *data, uint8_t size);
+
+uint8_t disp_init1[6] =
+    {
+        0x05,
+        0x11,
+        0x14,
+        0x01,
+        0x2B,
+        0x00};
+
+uint8_t disp_init2[20] =
+    {
+        0x13,
+        0x11,
+        0x11,
+        ' ', 'S', 'v', 'e', 't', 'l', 'a', 'n', 'a', ' ', 'v', '0', '.', '1', //14 letters
+        //' ', ' ', ' ', 'P', 'O', 'W', 'E', 'R', ' ', 'O', 'N', ' ', ' ', ' ', //14 letters
+        0x00,
+        0x3A, //0x3F,
+        0x00};
+
+uint8_t disp_init3[10] =
+    {
+        0x09,
+        0x11,
+        0x12,
+        '2', ' ', '0', '0', //3 numbers, first digit 0-blank, 1-minus, 2-plus
+        0x00,
+        0xAC,
+        0x00};
+
+uint8_t disp_init4[16] =
+    {
+        0x0F,
+        0x11,
+        0x13,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x33,
+        0x00};
+
+#define DISP_SPI_CS PA15
+#define DISP_SPI_MOSI PB5
+//#define DISP_SPI_MISO PB4
+#define DISP_SPI_SCK PB3
+#define DISP_RESET PB6
+
+#define PowerON PB10 //aka RYAC
+#define F_RLY PB12
+#define SP_B_RLY PB13
+#define XSMUTE PB11 //XAMUTE active low in controller, active high in scheme
+#define POWERKEY BUTTON
+#define POWERLED PC13
 
 struct vlStruct 
     { 
