@@ -41,6 +41,7 @@ RotaryEncoder encoder_vol(ENC1, ENC2);
 #define SPIDSP_SCK PB14
 #define SPIDSP_MOSI PB15
 uint16_t volumeposition = 48; //default volume 0dB
+uint8_t direction;
 
 channel_tm chan = IN10;
 //chan = IN10; //default channel
