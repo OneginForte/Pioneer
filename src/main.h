@@ -35,13 +35,14 @@ uint16_t buttonCounter = 0;
 //DSPControl(uint8_t dsp_sck, uint8_t dsp_mosi,uint8_t volume, Channel channel);
 volatile uint8_t powerstatus = false;
 
-RotaryEncoder encoder_vol(ENC1, ENC2);
+RotaryEncoder encoder(ENC1, ENC2);
 
 //ini DSP pins and default value
 #define SPIDSP_SCK PB14
 #define SPIDSP_MOSI PB15
 uint16_t volumeposition = 48; //default volume 0dB
 uint8_t direction;
+uint16_t selector;
 
 channel_tm chan = IN10;
 //chan = IN10; //default channel
@@ -50,7 +51,7 @@ DSPControl DSP(SPIDSP_SCK, SPIDSP_MOSI, volumeposition, chan);
 
 void encoderISR()
 {
-    encoder_vol.readAB();
+    encoder.readAB();
 }
 
 __STATIC_INLINE void delay_us(uint32_t us)

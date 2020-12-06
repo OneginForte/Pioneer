@@ -6,6 +6,7 @@
 #include "stm32yyxx_hal_conf.h"
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx.h"
+#include "stm32f1xx_ll_bus.h"
 
 //#define USE_FULL_LL_DRIVER
 //#include <Wire.h>
@@ -54,7 +55,7 @@ void setup()
 
     DSP.begin(); //prepare DSP
 
-    encoder_vol.begin(); //set encoders pins as input & enable built-in pullup resistors
+    encoder.begin(); //set encoders pins as input & enable built-in pullup resistors
     //encoder_vol.setPosition(volumeposition);
 
     digitalWrite(DISP_SPI_SCK, HIGH);
@@ -64,11 +65,11 @@ void setup()
 
     delay(1);
     DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init1, 4);
-    delay(20);
+    delay(12);
     DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init2, 18);
-    delay(20);
+    delay(12);
     DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init3, 8);
-    delay(20);
+    delay(12);
     DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init4, 14);
     delay(12);
 
@@ -79,41 +80,46 @@ void setup()
     digitalWrite(XSMUTE, HIGH);
 
     
-    pinMode(VOL_A, INPUT_PULLUP);
-    pinMode(VOL_B, INPUT_PULLUP);
+    //pinMode(VOL_A, INPUT_PULLUP);
+    //pinMode(VOL_B, INPUT_PULLUP);
     /* GPIOA Clock */
-    /*
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOA);
     /**TIM2 GPIO Configuration  
     PA0-WKUP   ------> TIM2_CH1
     PA1   ------> TIM2_CH2 
-  
+    */
+    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = LL_GPIO_PIN_0 | LL_GPIO_PIN_1;
     GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
     LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    */
+    
 
-    LL_TIM_InitTypeDef TIM_InitStruct = {0};
 
 
     /* Peripheral clock enable */
-    __HAL_RCC_TIM2_CLK_ENABLE();
+    //__HAL_RCC_TIM2_CLK_ENABLE();
     //LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
+    //LL_APB1_GRP1_PERIPH_PWR
+    //__HAL_RCC_APB1_RELEASE_RESET
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
 
-    LL_TIM_SetEncoderMode(TIM2, LL_TIM_ENCODERMODE_X4_TI12);
+    LL_TIM_InitTypeDef TIM_InitStruct = {0};
+    LL_TIM_SetEncoderMode(TIM2, LL_TIM_ENCODERMODE_X2_TI2); //LL_TIM_ENCODERMODE_X4_TI12
     LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ACTIVEINPUT_DIRECTTI);
     LL_TIM_IC_SetPrescaler(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ICPSC_DIV1);
     LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_IC_FILTER_FDIV32_N8);
     LL_TIM_IC_SetPolarity(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_IC_POLARITY_RISING);
     LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ACTIVEINPUT_DIRECTTI);
     LL_TIM_IC_SetPrescaler(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ICPSC_DIV1);
-    LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_FILTER_FDIV1);
+    LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_FILTER_FDIV32_N8);
     LL_TIM_IC_SetPolarity(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_POLARITY_RISING);
-    TIM_InitStruct.Prescaler = 0;
+    TIM_InitStruct.Prescaler = 65535;
     TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
     TIM_InitStruct.Autoreload = 237;
-    TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+    TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV2;
     LL_TIM_Init(TIM2, &TIM_InitStruct);
     LL_TIM_EnableARRPreload(TIM2);
     LL_TIM_SetTriggerOutput(TIM2, LL_TIM_TRGO_RESET);
@@ -125,8 +131,9 @@ void setup()
     {
         // put your main code here, to run repeatedly:
         delay(100);
-        volumeposition = LL_TIM_GetCounter(TIM2); //encoder_vol.getPosition();
+        volumeposition = LL_TIM_GetCounter(TIM2); //
         direction = LL_TIM_GetDirection(TIM2);
+        selector = encoder.getPosition();
         //LL_TIM_COUNTERDIRECTION_UP  LL_TIM_COUNTERDIRECTION_DOWN
         if (volumeposition > 237)
         {
