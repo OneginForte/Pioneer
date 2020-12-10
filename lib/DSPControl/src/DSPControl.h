@@ -41,7 +41,7 @@ class DSPControl
     DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, uint16_t channelin);
 
     void begin(void);
-    void setvolume(uint8_t volume, uint8_t channelin);
+    void set_mvolume(uint16_t volume);
     void setmute(uint8_t channelin);
 
     __STATIC_INLINE void delay_us(uint32_t us)
@@ -85,7 +85,7 @@ class DSPControl
     {
       channel_t channels;
       uint16_t chncode;
-	} volume_t;
+	  } volume_t;
 
   volume_t volume_m[18] = {
 	{ IN1, 0x0400 },

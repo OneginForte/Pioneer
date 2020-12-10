@@ -131,26 +131,27 @@ void RotaryEncoder::readAB()
 
   switch ((_prevValueAB | _currValueAB))
   {
-    #if defined(__AVR__)                                //slow MCU
-    case 0b0001:                                        //CW states, 1 count  per click
-  //case 0b0001: case 0b1110:                           //CW states, 2 counts per click
-    #else                                               //fast MCU
-    case 0b0001: case 0b1110:                           //CW states, 1 count  per click
-    //case 0b0001: case 0b1110: case 0b1000: case 0b0111: //CW states, 2 counts per click
-    #endif
+
+    case 0b1110: case 0b1100: case 0b0011: case 0b1000: case 0b0001: //CW states, 1 count  per click
+
       _counter++;
+      if (_counter > 239)
+      {
+        _counter = 239;
+      }
       break;
 
-    #if defined(__AVR__)                                //slow MCU
-    case 0b0100:                                        //CCW states, 1 count  per click
-  //case 0b0100: case 0b1011:                           //CCW states, 2 count  per click
-    #else                                               //fast MCU
-    case 0b0100: case 0b1011:                           //CCW states, 1 count  per click
-    //case 0b0100: case 0b1011: case 0b0010: case 0b1101: //CCW states, 2 counts per click
-    #endif
+    case 0b1001: case 0b1101: case 0b1010: case 0b0100: case 0b0110: //CCW states, 1 count  per click
       _counter--;
+      if (_counter < 1)
+      {
+        _counter = 1;
+      }
       break;
   }
+
+
+
 
   _prevValueAB = _currValueAB << 2;                     //update previouse state
 

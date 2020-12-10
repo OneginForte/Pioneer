@@ -90,8 +90,8 @@ void DSPControl::begin(void)
     0x2800, //input select IN10 to MAIN.
     0x0001, //input select SUB1 & SUB2
     0x4002, //mode L+R to MAIN
-    0x10a3, //volume FR 0x0303 +24dB, 0x0003 0dB, 0x0BF3 -95dB
-    0x30a3, //volume FL 0x2303 +24dB, 0x2003 0dB, 0x2BF3 -95dB
+    0x1BF3, //volume FR 0x0303 +24dB, 0x0003 0dB, 0x0BF3 -95dB
+    0x3BF3, //volume FL 0x2303 +24dB, 0x2003 0dB, 0x2BF3 -95dB
     0x4BF3, //SW channel -95dB
     0x6BF3, //C channel -95dB
     0x8BF3, //SR channel -95dB
@@ -132,14 +132,23 @@ void DSPControl::begin(void)
 /*
     setvolume()
 
-    Set volume of channel
+    Set volume of MAIN channel
 
     NOTE:
 
 */
 /**************************************************************************/
-void DSPControl::setvolume(uint8_t volume, uint8_t channelin)
+void DSPControl::set_mvolume(uint16_t volume)
 {
+    uint16_t sound_init[2];
+    sound_init[0] = volume|0x0003; //FR
+    sound_init[1] = volume|0x2003; //FL
+
+    for (size_t i = 0; i < 2; i++) //send Volume
+    {
+        shift16(_dsp_mosi, _dsp_sck, sound_init[i]);
+        _delay_us(10);
+    }
    delay(1);
 }
 
@@ -155,9 +164,15 @@ void DSPControl::setvolume(uint8_t volume, uint8_t channelin)
 /**************************************************************************/
 void DSPControl::setmute(uint8_t channelin)
 {
+    uint16_t sound_init[2];
+    sound_init[0] = 0x0FF3; //FR
+    sound_init[1] = 0x2FF3; //FL
 
-delay(1);
-
+    for (size_t i = 0; i < 2; i++) //send Volume
+    {
+        shift16(_dsp_mosi, _dsp_sck, sound_init[i]);
+        _delay_us(10);
+    }
 }
 
 
