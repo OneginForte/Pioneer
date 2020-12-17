@@ -14,6 +14,11 @@
 //#include <stdint.h>
 //#include <delay.h>
 
+
+
+DSPControl DSP(SPIDSP_SCK, SPIDSP_MOSI);
+
+
 void lcd_numTOstr(uint16_t value, uint8_t nDigit, uint8_t *buf)
 {
     //u_int8_t digi;
@@ -53,11 +58,11 @@ void setup()
     pinMode(POWERLED, OUTPUT);
     digitalWrite(POWERLED, HIGH);
     pinMode(PowerON, OUTPUT);
-    digitalWrite(PowerON, HIGH); //LOW
+    digitalWrite(PowerON, LOW); //LOW
     pinMode(F_RLY, OUTPUT);
     digitalWrite(F_RLY, LOW);
-    pinMode(XSMUTE, OUTPUT);
-    digitalWrite(XSMUTE, LOW);
+    pinMode(SMUTE, OUTPUT);
+    digitalWrite(SMUTE, LOW);
 
     pinMode(DISP_RESET, OUTPUT);
     digitalWrite(DISP_RESET, LOW);//LOW
@@ -71,33 +76,30 @@ void setup()
 
 
     pinMode(POWERKEY, INPUT_PULLDOWN);
-/*
+
     while (digitalRead(POWERKEY) != HIGH)
         {
 
         delay(10);
 
         }
-*/
+
     digitalWrite(PowerON, HIGH);
-    powerstatus = true;
-    delay(100); //1000
+    powerstatus = ON;
+    digitalWrite(POWERLED, LOW);
+
+    delay(2000); //1000
 
     digitalWrite(DISP_SPI_SCK, HIGH);
     digitalWrite(DISP_RESET, HIGH);
 
-    digitalWrite(POWERLED, LOW);
-
-    DSP.begin(); //prepare DSP
+    delay(100);
 
     encoder.begin(); //set encoders pins as input & enable built-in pullup resistors
     encoder.setPosition(volumeposition);
     oldvolumeposition = volumeposition;
-    delay(100);
 
-    DSP.set_mvolume(volume_m[volumeposition - 1].volumestr);
 
-    delay(1);
     DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init1, sizeof(disp_init1));
     delay(12);
     DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init2, sizeof(disp_init2));
@@ -109,36 +111,45 @@ void setup()
     DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init3, sizeof(disp_init3));
     delay(12);
     DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init4, sizeof(disp_init4));
-    delay(12);
+
 
     attachInterrupt(digitalPinToInterrupt(ENC1), encoderISR, CHANGE); //call encoderISR()    every high->low or low->high changes
     //attachInterrupt(digitalPinToInterrupt(BUTTON), encoderButtonISR, FALLING); //call pushButtonISR() every high->low              changes
 
-    //Speacer relay ON
+    delay(1000);
+
+    DSP.begin(volume_m[volumeposition - 1].voldsp, chan); //prepare DSP
+
+    delay(100);
+
+    //Speaker A relay ON
     //Mute off
-    //digitalWrite(F_RLY, HIGH);
-    //digitalWrite(XSMUTE, HIGH);
+    digitalWrite(F_RLY, HIGH);
+    digitalWrite(SMUTE, HIGH); //MUTE off. Real XMUTE is inverse. For mute send low level or 0v to DSP board.
+
+
+    //DSP.set_mvolume(volume_m[volumeposition - 1].voldsp);
 
     /* GPIOA Clock */
-    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOA);
+    //LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+    //LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+    //LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOA);
     /**TIM2 GPIO Configuration  
     PA0-WKUP   ------> TIM2_CH1
     PA1   ------> TIM2_CH2 
     */
-    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = LL_GPIO_PIN_0 | LL_GPIO_PIN_1;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
-    LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    //LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+    //GPIO_InitStruct.Pin = LL_GPIO_PIN_0 | LL_GPIO_PIN_1;
+    //GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
+    //GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
+    //LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
     
     /* Peripheral clock enable */
     //__HAL_RCC_TIM2_CLK_ENABLE();
     //LL_APB1_GRP1_PERIPH_PWR
     //__HAL_RCC_APB1_RELEASE_RESET
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
-
+    //LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
+    /*
     LL_TIM_InitTypeDef TIM_InitStruct = {0};
     LL_TIM_SetEncoderMode(TIM2, LL_TIM_ENCODERMODE_X4_TI12);
     LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ACTIVEINPUT_DIRECTTI);
@@ -157,15 +168,15 @@ void setup()
     LL_TIM_EnableARRPreload(TIM2);
     LL_TIM_SetTriggerOutput(TIM2, LL_TIM_TRGO_RESET);
     LL_TIM_DisableMasterSlaveMode(TIM2);
-
+    */
 }
 
     void loop()
     {
         // put your main code here, to run repeatedly:
         delay(100);
-        selector = LL_TIM_GetCounter(TIM2); //
-        direction = LL_TIM_GetDirection(TIM2);
+        //selector = LL_TIM_GetCounter(TIM2); //
+        //direction = LL_TIM_GetDirection(TIM2);
         volumeposition = encoder.getPosition();
 
         /*
@@ -193,7 +204,7 @@ void setup()
             disp_init3[6] = volume_m[volumeposition-1].message2[3];
             DispSend(DISP_SPI_MOSI, DISP_SPI_SCK, DISP_SPI_CS, disp_init3, sizeof(disp_init3));
 
-            DSP.set_mvolume(volume_m[volumeposition - 1].volumestr);
+            DSP.set_mvolume(volume_m[volumeposition - 1].voldsp);
             delay(5);
 
             oldvolumeposition = volumeposition;
@@ -210,7 +221,7 @@ void setup()
             digitalWrite(DISP_RESET, LOW);
             //delay(10);
             digitalWrite(F_RLY, LOW);
-            digitalWrite(XSMUTE, LOW);
+            digitalWrite(SMUTE, HIGH);
             digitalWrite(PowerON, LOW);
             digitalWrite(POWERLED, HIGH);
             delay(1000);
@@ -255,4 +266,3 @@ void setup()
         delay_us(2);
         digitalWrite(DispCSPin, LOW);
     }
-

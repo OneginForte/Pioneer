@@ -51,25 +51,16 @@
     Constructor
 */
 /**************************************************************************/
-DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi, uint16_t volume, uint16_t channelin)
+DSPControl::DSPControl(uint32_t dsp_sck, uint32_t dsp_mosi)
 {
 _dsp_sck = dsp_sck;
-_dsp_mosi = dsp_sck;
-_volume = volume;
-_channel = (channel_t)channelin; 
+_dsp_mosi = dsp_mosi;
 }
 
 __STATIC_INLINE void DWT_Init(void)
               {
               CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // разрешаем использовать счётчик
               DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;            // запускаем счётчик
-              };
-
-__STATIC_INLINE void _delay_us(uint32_t us)
-              {
-              uint32_t us_count_tic = us * (SystemCoreClock / 1000000U);
-              DWT->CYCCNT = 0U;
-              while (DWT->CYCCNT < us_count_tic);
               };
 
 
@@ -83,46 +74,48 @@ __STATIC_INLINE void _delay_us(uint32_t us)
 
 */
 /**************************************************************************/
-void DSPControl::begin(void)
-{
-    uint16_t sound_init[] = 
-    {
-    0x2800, //input select IN10 to MAIN.
-    0x0001, //input select SUB1 & SUB2
-    0x4002, //mode L+R to MAIN
-    0x1BF3, //volume FR 0x0303 +24dB, 0x0003 0dB, 0x0BF3 -95dB
-    0x3BF3, //volume FL 0x2303 +24dB, 0x2003 0dB, 0x2BF3 -95dB
-    0x4BF3, //SW channel -95dB
-    0x6BF3, //C channel -95dB
-    0x8BF3, //SR channel -95dB
-    0xABF3, //SL channel -95dB
-    0xCBF3, //SBR channel -95dB
-    0xEBF3, //SBL channel -95dB
-    0x0008, //tone bass
-    0x0009, //tone treeble
-    0x0000, //test, as is from datasheet.
-    // However datasheet specified sent init chain to addresses from 0 to 5
-    // 0,1,2,3...3,4,5  adress 3 must init every of 8 channel. 
-    //Not used channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011
-    //1xx3 volume range 0dB to +24dB,  0xx3 volume range 0 to -95dB
-    //FR - 0xx3, FL - 2xx3, SW - 4xx3, C- 6xx3, SR - 8xx3, SL - Axx3, SBR - Cxx3, SBL - Exx3 
-    0x000B //volume change scheme
-    };
-    
-    
-    
-    pinMode(_dsp_sck, OUTPUT);
-    digitalWrite(_dsp_sck, LOW);
-    pinMode(_dsp_mosi, OUTPUT);
-    digitalWrite(_dsp_mosi, LOW);
+              void DSPControl::begin(uint16_t volume, channel_tm channelin)
+              {
+                  uint16_t fsound_init[15] =
+                      {
+                          0x2800, //input select IN10 to MAIN.  //0x2800, //input select.
+                          0x0001, //input select SUB1 & SUB2
+                          0x4002, //mode L+R to MAIN
+                          0x0003, //volume FR 0x0303 +24dB, 0x0003 0dB, 0x0BF3 -95dB, 0x0FF3 - mute
+                          0x2003, //volume FL 0x2303 +24dB, 0x2003 0dB, 0x2BF3 -95dB, 0x2FF3 - mute
+                          0x4FF3, //SW channel -95dB or mute
+                          0x6FF3, //C channel -95dB or mute
+                          0x8FF3, //SR channel -95dB or mute
+                          0xAFF3, //SL channel -95dB or mute
+                          0xCFF3, //SBR channel -95dB or mute
+                          0xEFF3, //SBL channel -95dB or mute
+                          0x2008, //tone bass
+                          0x0009, //tone treeble
+                          0x000A, //test, as is from datasheet.
+                          // However datasheet specified sent init chain to addresses from 0 to 5
+                          // 0,1,2,3...3,4,5  adress 3 must init every of 8 channel.
+                          //Not used channel must set to minimum volume level, is -95dB, DEC 191 HEX xxx|0|10111111|0011
+                          //1xx3 volume range 0dB to +24dB,  0xx3 volume range 0 to -95dB
+                          //FR - 0xx3, FL - 2xx3, SW - 4xx3, C- 6xx3, SR - 8xx3, SL - Axx3, SBR - Cxx3, SBL - Exx3
+                          0x000B //volume change scheme
+                      };
 
-    DWT_Init();
-    
-    for (size_t i = 0; i < 8; i++) //init DSP
-    {
-        shift16(_dsp_mosi, _dsp_sck, sound_init[i]);
-        _delay_us(10);
-    }
+                  pinMode(_dsp_sck, OUTPUT);
+                  digitalWrite(_dsp_sck, LOW);
+                  pinMode(_dsp_mosi, OUTPUT);
+                  digitalWrite(_dsp_mosi, LOW);
+
+                  DWT_Init();
+                  fsound_init[0] = channelin;
+                  fsound_init[3] = fsound_init[3] ^ volume;
+                  fsound_init[4] = fsound_init[4] ^ volume;
+
+                uint8_t i;
+                  for (i = 0; i < 15; i++) //init DSP
+                  {
+                      shift16(_dsp_mosi, _dsp_sck, fsound_init[i]);
+                      delay_us(100);
+                  }
 
 
 
@@ -140,14 +133,17 @@ void DSPControl::begin(void)
 /**************************************************************************/
 void DSPControl::set_mvolume(uint16_t volume)
 {
-    uint16_t sound_init[2];
-    sound_init[0] = volume|0x0003; //FR
-    sound_init[1] = volume|0x2003; //FL
+    uint16_t sound_init[5];
+    sound_init[0] = 0x2800,          //input select IN10 to MAIN.  //0x2800, //input select.
+    sound_init[1] = 0x0001,          //input select SUB1 & SUB2
+    sound_init[2] = 0x4002,          //mode L+R to MAIN
+    sound_init[3] = 0x0003 ^ volume; //FR
+    sound_init[4] = 0x2003 ^ volume; //FL
 
-    for (size_t i = 0; i < 2; i++) //send Volume
+    for (size_t i = 0; i < 5; i++) //send Volume
     {
         shift16(_dsp_mosi, _dsp_sck, sound_init[i]);
-        _delay_us(10);
+        delay_us(10);
     }
    delay(1);
 }
@@ -162,7 +158,7 @@ void DSPControl::set_mvolume(uint16_t volume)
 
 */
 /**************************************************************************/
-void DSPControl::setmute(uint8_t channelin)
+void DSPControl::setmute(channel_tm channelin)
 {
     uint16_t sound_init[2];
     sound_init[0] = 0x0FF3; //FR
@@ -171,7 +167,7 @@ void DSPControl::setmute(uint8_t channelin)
     for (size_t i = 0; i < 2; i++) //send Volume
     {
         shift16(_dsp_mosi, _dsp_sck, sound_init[i]);
-        _delay_us(10);
+        delay_us(10);
     }
 }
 
@@ -188,20 +184,19 @@ void DSPControl::shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val)
         uint8_t i;
         for (i = 0; i < 16; i++)
         {
-            _delay_us(1);
+            delay_us(2);
             digitalWrite(DataPin, LOW);
-            _delay_us(1);
+            delay_us(2);
             digitalWrite(ClockPin, LOW);
-            _delay_us(1);
+            delay_us(2);
             digitalWrite(DataPin, (Val & (1 << (15 - i))));
-            _delay_us(1);
+            delay_us(2);
             digitalWrite(ClockPin, HIGH);
         }
-        _delay_us(1);
+        delay_us(2);
         digitalWrite(DataPin, HIGH);     //latch on
-        _delay_us(1);
+        delay_us(2);
         digitalWrite(ClockPin, LOW);
-        _delay_us(1);
+        delay_us(2);
         digitalWrite(DataPin, LOW);      //latch off
     }
-
