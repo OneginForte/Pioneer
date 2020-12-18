@@ -28,6 +28,7 @@ uint8_t oldvolumeposition;
 #define SPIDSP_SCK PB14
 #define SPIDSP_MOSI PB15
 
+DSPControl DSP(SPIDSP_SCK, SPIDSP_MOSI);
 
 enum speaker_t : uint8_t
 {

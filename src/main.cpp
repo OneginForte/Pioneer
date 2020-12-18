@@ -14,11 +14,6 @@
 //#include <stdint.h>
 //#include <delay.h>
 
-
-
-DSPControl DSP(SPIDSP_SCK, SPIDSP_MOSI);
-
-
 void lcd_numTOstr(uint16_t value, uint8_t nDigit, uint8_t *buf)
 {
     //u_int8_t digi;
