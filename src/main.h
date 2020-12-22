@@ -1,6 +1,11 @@
-#include <Arduino.h>
-#include <RotaryEncoder.h>
-#include "DSPControl.h"
+//#include <RotaryEncoder.h>
+//#include "DSPControl.h"
+#include "stm32f4xx_ll_bus.h"
+#include "stm32f4xx_ll_rcc.h"
+#include "stm32f4xx_ll_system.h"
+#include "stm32f4xx_ll_utils.h"
+#include "stm32f4xx_ll_gpio.h"
+
 
 #define VOL_A PA0   //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
 #define VOL_B PA1   //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!

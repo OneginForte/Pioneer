@@ -45,6 +45,9 @@
 
 #include "DSPControl.h"
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
 /**************************************************************************/
 /*
@@ -200,3 +203,7 @@ void DSPControl::shift16(uint32_t DataPin, uint32_t ClockPin, uint16_t Val)
         delay_us(2);
         digitalWrite(DataPin, LOW);      //latch off
     }
+
+#ifdef __cplusplus
+}
+#endif

@@ -12,7 +12,7 @@
     "type": "git",
     "url":  "https://github.com/OneginForte/Pioneer/lib/DSPControl"
   },
-  "version":    "0.0.2",
-  "frameworks": "arduino",
+  "version":    "0.1.0",
+  "frameworks": "stm32cube",
   "platforms":  "*"
 }

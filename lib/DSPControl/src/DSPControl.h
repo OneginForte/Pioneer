@@ -21,18 +21,11 @@
    see link for details  - https://www.gnu.org/licenses/licenses.html
 */
 /***************************************************************************************************/
-#ifndef DSPControl_h
-#define DSPControl_h
+#ifndef DSPCONTROL_H_
+#define DSPCONTROL_H_
 
-#include <Arduino.h>
-
-
-#if defined(__AVR__)
-#include <avr/pgmspace.h>                  //use for PROGMEM Arduino AVR
-#elif defined(ESP8266)
-#include <pgmspace.h>                      //use for PROGMEM Arduino ESP8266
-#elif defined(_VARIANT_ARDUINO_STM32_)
-#include <avr/pgmspace.h>                  //use for PROGMEM Arduino STM32
+#ifdef __cplusplus
+ extern "C" {
 #endif
 
 class DSPControl
@@ -85,4 +78,8 @@ protected:
 
 };
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif
