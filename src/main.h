@@ -6,7 +6,6 @@
 #define VOL_B PA1   //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 #define ENC1 PA8
 #define ENC2 PA9
-#define BUTTON PA10 //ky-040 sw  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 
 #define DISP_SPI_CS PA15
 #define DISP_SPI_MOSI PB5
@@ -18,7 +17,7 @@
 #define F_RLY PB12
 #define SP_B_RLY PB13
 #define SMUTE PB11 //XAMUTE active low in controller, active high in scheme
-#define POWERKEY BUTTON
+#define POWERKEY PA10
 #define POWERLED PC13
 
 uint8_t volumeposition = 129; //default volume 0dB
