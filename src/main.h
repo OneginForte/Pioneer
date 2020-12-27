@@ -21,7 +21,7 @@
 #define POWERKEY BUTTON
 #define POWERLED PC13
 
-uint8_t volumeposition = 79; //default volume 0dB
+uint8_t volumeposition = 129; //default volume 0dB
 uint8_t oldvolumeposition;
 
 //ini DSP pins and default value
