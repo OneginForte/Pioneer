@@ -2,10 +2,12 @@
 #include <RotaryEncoder.h>
 #include "DSPControl.h"
 
-#define VOL_A PA0   //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
-#define VOL_B PA1   //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
 #define ENC1 PA8
 #define ENC2 PA9
+/*
+#define VOL_A PA0   //ky-040 clk pin, add 100nF/0.1uF capacitors between pin & ground!!!
+#define VOL_B PA1   //ky-040 dt  pin, add 100nF/0.1uF capacitors between pin & ground!!!
+
 
 #define DISP_SPI_CS PA15
 #define DISP_SPI_MOSI PB5
@@ -19,6 +21,44 @@
 #define SMUTE PB11 //XAMUTE active low in controller, active high in scheme
 #define POWERKEY PA10
 #define POWERLED PC13
+*/
+
+#define POWERLED_Pin LL_GPIO_PIN_13
+#define POWERLED_GPIO_Port GPIOC
+#define VOL_A_Pin LL_GPIO_PIN_0
+#define VOL_A_GPIO_Port GPIOA
+#define VOL_B_Pin LL_GPIO_PIN_1
+#define VOL_B_GPIO_Port GPIOA
+#define POWERON_Pin LL_GPIO_PIN_10
+#define POWERON_GPIO_Port GPIOB
+#define SMUTE_Pin LL_GPIO_PIN_11
+#define SMUTE_GPIO_Port GPIOB
+#define F_RLY_Pin LL_GPIO_PIN_12
+#define F_RLY_GPIO_Port GPIOB
+#define SP_B_RLY_Pin LL_GPIO_PIN_13
+#define SP_B_RLY_GPIO_Port GPIOB
+//#define XOLERR_GPIO_Port GPIOB
+//#define XOLERR_Pin LL_GPIO_PIN_14
+//#define XOCERR_GPIO_Port GPIOB
+//#define XDCERR_Pin LL_GPIO_PIN_15
+#define SPIDSP_SCK_Pin LL_GPIO_PIN_14
+#define SPIDSP_Port GPIOB
+#define SPIDSP_MOSI_Pin LL_GPIO_PIN_15
+#define ENC1_Pin LL_GPIO_PIN_8
+#define ENC1_GPIO_Port GPIOA
+#define ENC2_Pin LL_GPIO_PIN_9
+#define ENC2_GPIO_Port GPIOA
+#define POWKEY_Pin LL_GPIO_PIN_10
+#define POWKEY_GPIO_Port GPIOA
+#define DISP_SPI_CS_Pin LL_GPIO_PIN_15
+#define DISP_SPI_CS_GPIO_Port GPIOA
+#define DISP_SPI_SCK_Pin LL_GPIO_PIN_3
+#define DISP_SPI_SCK_GPIO_Port GPIOB
+#define DISP_SPI_MOSI_Pin LL_GPIO_PIN_5
+#define DISP_SPI_MOSI_GPIO_Port GPIOB
+#define DISP_SPI_RESET_Pin LL_GPIO_PIN_6
+#define DISP_SPI_RESET_GPIO_Port GPIOB
+
 
 uint8_t volumeposition = 129; //default volume 0dB
 uint8_t oldvolumeposition;
@@ -106,15 +146,14 @@ __STATIC_INLINE void delay_us(uint32_t us)
         ;
 };
 
-void DispSend(uint32_t DispDataPin, uint32_t DispClockPin, uint32_t DispCSkPin, uint8_t *data, uint8_t size);
+void DispSend(GPIO_TypeDef *DispDataPort, uint32_t DispDataPin, GPIO_TypeDef *DispClockPort, uint32_t DispClockPin, GPIO_TypeDef *DispCSPort, uint32_t DispCSPin, uint8_t *data, uint8_t size);
 
-uint8_t disp_init1[] =
-    {
-        0x05,
-        0x11,
-        0x14,
-        0x01
-    };
+    uint8_t disp_init1[] =
+        {
+            0x05,
+            0x11,
+            0x14,
+            0x01};
 
 uint8_t disp_init2[] =
     {
